@@ -1,0 +1,4 @@
+# Rót là công cụ nội bộ riêng của từng quán (self-hosted), không phải trang
+# web công khai — chặn toàn bộ để tránh domain nội bộ bị Google index.
+User-agent: *
+Disallow: /
