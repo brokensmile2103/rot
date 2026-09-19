@@ -7,7 +7,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38BDF8?logo=tailwindcss&logoColor=white)
 ![Alpine.js](https://img.shields.io/badge/Alpine.js-8BC0D0?logo=alpinedotjs&logoColor=white)
 
-[Tính năng](#-tính-năng-nổi-bật) · [Cài đặt](#-cài-đặt) · [Rót Cloud](#-không-muốn-tự-vận-hành-server-dùng-rót-cloud) · [Đổi phiên bản](CHANGELOG.md)
+[Tính năng](#-tính-năng-nổi-bật) · [Cài đặt](#-cài-đặt) · [Rót Cloud](#-không-muốn-tự-vận-hành-server-dùng-rót-cloud) · [Đổi phiên bản](#-nâng-cấp-lên-bản-mới)
 
 ---
 
