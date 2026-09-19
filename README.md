@@ -9,8 +9,6 @@
 
 [Tính năng](#-tính-năng-nổi-bật) · [Cài đặt](#-cài-đặt) · [Rót Cloud](#-không-muốn-tự-vận-hành-server-dùng-rót-cloud) · [Đổi phiên bản](CHANGELOG.md)
 
-</div>
-
 ---
 
 Rót là phần mềm quản lý bán hàng dành riêng cho xe/quầy cà phê, xe nước, quán nước nhỏ và vừa: bán hàng, ca làm việc, sổ quỹ, thực đơn, kho nguyên liệu, nhân viên, và báo cáo giá vốn/lợi nhuận — tất cả trong một giao diện gọn nhẹ, dùng tốt trên điện thoại ngay tại quầy.
@@ -128,7 +126,7 @@ Xem [CHANGELOG.md](CHANGELOG.md) để biết mỗi phiên bản có thay đổi
 
 ## Self-host hay Rót Cloud?
 
-| | **Tự host (repo này)** | **[Rót Cloud](#)** |
+| | **Tự host (repo này)** | **[Rót Cloud](http://rot.inithtml.com/)** |
 |---|---|---|
 | Cài đặt | Tự thuê hosting/VPS, tự cấu hình | Đăng ký là dùng được ngay |
 | Cập nhật phiên bản mới | Tự `git pull` + build lại | Tự động, luôn mới nhất |
@@ -143,7 +141,7 @@ Icon được build cùng Tailwind qua Vite (package `@fortawesome/fontawesome-f
 
 ## Bản quyền & Ghi công
 
-**Rót** được phát triển và phân phối bởi **[Init HTML](https://inithtml.com/)**. Muốn dùng ngay không cần tự vận hành server? Xem **[Rót Cloud](#)**.
+**Rót** được phát triển và phân phối bởi **[Init HTML](https://inithtml.com/)**. Muốn dùng ngay không cần tự vận hành server? Xem **[Rót Cloud](http://rot.inithtml.com/)**.
 
 Phần mềm này được xây dựng dựa trên các công nghệ và dịch vụ mã nguồn mở/công khai sau:
 
