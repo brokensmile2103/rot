@@ -196,7 +196,7 @@
                 (tổng ÷ số lần thứ đó xuất hiện trong {{ $data['dayCount'] }} ngày, tính cả những ngày quán nghỉ). Không tính hôm nay vì chưa bán xong.
             </p>
             @unless($isOrders)
-                <p>Doanh thu tính đúng như trang Báo cáo (chưa trừ giảm giá áp cho cả đơn).</p>
+                <p>Doanh thu là số tiền thực nhận, tính đúng như trang Báo cáo (đã trừ mọi khoản giảm giá và điểm đổi).</p>
             @endunless
             @if($data['hiddenOrders'] > 0)
                 <p>Có {{ money($data['hiddenOrders']) }} đơn nằm ở giờ rất ít khách (đầu/cuối khung giờ bán) nên được ẩn khỏi các ô cho gọn — vẫn được tính trong hàng "Cả ngày".</p>

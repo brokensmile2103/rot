@@ -8,8 +8,13 @@
             <i class="fa-solid fa-chart-line"></i>
         </div>
         <h2 class="text-lg font-bold text-neutral-900 flex-1">Báo cáo lợi nhuận</h2>
-        <a href="{{ route('owner.reports.peak-hours') }}" class="text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition shrink-0">
+    </div>
+    <div class="flex flex-wrap gap-2 mb-4">
+        <a href="{{ route('owner.reports.peak-hours') }}" class="text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition">
             <i class="fa-solid fa-fire mr-1"></i>Giờ cao điểm
+        </a>
+        <a href="{{ route('owner.tax.revenue-book') }}" class="text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition">
+            <i class="fa-solid fa-book mr-1"></i>Sổ doanh thu &amp; ngưỡng thuế
         </a>
     </div>
 
@@ -41,6 +46,9 @@
         <div class="bg-white rounded-2xl p-4 border border-neutral-200 shadow-sm text-center">
             <div class="text-xs text-neutral-500 font-medium mb-1">Doanh thu</div>
             <div class="text-lg font-bold text-neutral-900">{{ money($revenue) }}đ</div>
+            @if($orderDiscount > 0)
+                <div class="text-[11px] text-neutral-400 mt-0.5">đã trừ {{ money($orderDiscount) }}đ giảm giá</div>
+            @endif
             @if(!is_null($revenueChange))
                 <div class="text-xs font-semibold mt-1 {{ $revenueChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     <i class="fa-solid {{ $revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
@@ -159,6 +167,11 @@
     </div>
 
     <p class="text-xs text-neutral-400 mt-4 leading-relaxed">
+        <i class="fa-solid fa-circle-info mr-1"></i>
+        <strong class="text-neutral-500">Doanh thu là số tiền thực nhận</strong> của các đơn hoàn thành — đã trừ giảm giá từng món, giảm giá cả đơn và điểm khách đổi — nên khớp đúng với số tiền khi Chốt ca.
+        Ở bảng theo món, phần giảm giá cả đơn được chia theo tỷ lệ giá trị từng món để tổng các món luôn bằng tổng doanh thu.
+    </p>
+    <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
         <i class="fa-solid fa-circle-info mr-1"></i>
         Giá vốn được ghi lại chính xác ngay tại thời điểm bán — số liệu đúng cho mọi thời điểm kể cả khi giá nhập nguyên liệu đã thay đổi sau này.
         Riêng đơn hàng phát sinh trước khi tính năng này được bật sẽ hiển thị giá vốn = 0 do chưa có dữ liệu ghi nhận.

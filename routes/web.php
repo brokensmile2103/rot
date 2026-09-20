@@ -12,6 +12,7 @@ use App\Http\Controllers\Owner\QuickSetupController;
 use App\Http\Controllers\Owner\ReportController;
 use App\Http\Controllers\Owner\SettingsController;
 use App\Http\Controllers\Owner\StaffController;
+use App\Http\Controllers\Owner\TaxBookController;
 use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\Pos\CashBookController;
 use App\Http\Controllers\Pos\OrderController;
@@ -130,6 +131,13 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
     Route::get('/bao-cao', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/bao-cao/xuat-csv', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/bao-cao/gio-cao-diem', [ReportController::class, 'peakHours'])->name('reports.peak-hours');
+    // Sổ doanh thu (mẫu S1a-HKD) + theo dõi ngưỡng thuế hộ kinh doanh (v1.2.0)
+    Route::get('/so-doanh-thu', [TaxBookController::class, 'index'])->name('tax.revenue-book');
+    Route::get('/so-doanh-thu/in', [TaxBookController::class, 'print'])->name('tax.revenue-book.print');
+    Route::get('/so-doanh-thu/xuat-csv', [TaxBookController::class, 'export'])->name('tax.revenue-book.export');
+    Route::put('/so-doanh-thu/thong-tin', [TaxBookController::class, 'updateProfile'])->name('tax.profile');
+    Route::post('/so-doanh-thu/ngoai-he-thong', [TaxBookController::class, 'storeExternal'])->name('tax.external.store');
+    Route::delete('/so-doanh-thu/ngoai-he-thong/{external}', [TaxBookController::class, 'destroyExternal'])->name('tax.external.destroy');
 
     Route::get('/cai-dat', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/cai-dat/giao-dien', [SettingsController::class, 'updateAppearance'])->name('settings.appearance');
