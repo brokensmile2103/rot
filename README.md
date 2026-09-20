@@ -1,6 +1,6 @@
-# ☕ Rót v1.1.3 — Phần mềm quản lý xe/quầy cà phê
+# ☕ Rót v1.2.0 — Phần mềm quản lý xe/quầy cà phê
 
-**Bán hàng · Kho nguyên liệu · Ca làm việc · Báo cáo lợi nhuận — trong 1 màn hình duy nhất**
+**Bán hàng · Kho nguyên liệu · Ca làm việc · Báo cáo lợi nhuận · Sổ doanh thu — trong 1 màn hình duy nhất**
 
 ![PHP](https://img.shields.io/badge/PHP-%3E%3D8.3-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
@@ -11,7 +11,7 @@
 
 ---
 
-Rót là phần mềm quản lý bán hàng dành riêng cho xe/quầy cà phê, xe nước, quán nước nhỏ và vừa: bán hàng, ca làm việc, sổ quỹ, thực đơn, kho nguyên liệu, nhân viên, và báo cáo giá vốn/lợi nhuận — tất cả trong một giao diện gọn nhẹ, dùng tốt trên điện thoại ngay tại quầy.
+Rót là phần mềm quản lý bán hàng dành riêng cho xe/quầy cà phê, xe nước, quán nước nhỏ và vừa: bán hàng, ca làm việc, sổ quỹ, thực đơn, kho nguyên liệu, nhân viên, báo cáo giá vốn/lợi nhuận và sổ doanh thu cho hộ kinh doanh — tất cả trong một giao diện gọn nhẹ, dùng tốt trên điện thoại ngay tại quầy.
 
 Đây là bản mã nguồn dành cho hình thức **self-hosted** — bạn tự cài đặt và vận hành trên hosting/VPS của riêng mình, toàn quyền kiểm soát dữ liệu. Nếu không muốn tự lo phần hạ tầng, xem [Rót Cloud](#-không-muốn-tự-vận-hành-server-dùng-rót-cloud) bên dưới.
 
@@ -30,13 +30,15 @@ Nếu bạn không rành kỹ thuật, không muốn tự thuê VPS, tự cấu 
 ## ✨ Tính năng nổi bật
 
 - **Bán hàng 1 màn hình** — giỏ hàng, size/topping tuỳ chọn, giữ đơn nháp cho khách đang chờ, "Lên đơn nhanh" cho món quen thuộc chỉ 1 chạm.
-- **Kho nguyên liệu & giá vốn tự động** — giá vốn mỗi món tính theo đúng công thức pha chế, cập nhật tự động theo phương pháp **bình quân gia quyền** mỗi lần nhập kho — không cần tự nhớ giá nhập gần nhất.
+- **Kho nguyên liệu & giá vốn tự động** — giá vốn mỗi món tính theo đúng công thức pha chế, cập nhật tự động theo phương pháp **bình quân gia quyền** mỗi lần nhập kho — không cần tự nhớ giá nhập gần nhất. Mọi lần sửa tay tồn kho/giá vốn đều được ghi vào **nhật ký điều chỉnh kho** (số trước/sau, lý do, người sửa, thời điểm) kèm tổng giá trị thiếu hụt/dư ước tính.
 - **Chốt ca minh bạch** — tự tính tiền mặt lý thuyết trong ca, đối chiếu với tiền đếm thực tế, báo ngay khớp/dư/thiếu quỹ; sổ quỹ ghi lại đầy đủ mọi khoản chi/nạp/rút.
-- **Báo cáo lợi nhuận thực** — không chỉ doanh thu trừ giá vốn, mà trừ luôn lương nhân viên và chi phí mặt bằng để ra lợi nhuận thực tế.
+- **Báo cáo lợi nhuận thực** — doanh thu là **số tiền thực nhận** (đã trừ giảm giá món, giảm giá cả đơn và điểm đổi, khớp đúng số Chốt ca), trừ giá vốn, lương nhân viên và chi phí mặt bằng để ra lợi nhuận thực tế.
+- **Giờ cao điểm** — bảng nhiệt giờ × thứ trong tuần (xem 4/8/13 tuần, theo số đơn hoặc doanh thu) cho biết khung giờ, ngày nào đông khách nhất để xếp ca và chuẩn bị nguyên liệu.
+- **Sổ doanh thu & ngưỡng thuế** — tự lập Sổ doanh thu bán hàng hóa, dịch vụ (mẫu S1a-HKD) cho hộ kinh doanh, in/lưu PDF hoặc tải CSV; nhập thêm doanh thu bán ngoài Rót; theo dõi doanh thu năm (cộng dồn mọi xe) so với ngưỡng miễn thuế kèm dự báo ngày chạm ngưỡng. Xem [chi tiết bên dưới](#-sổ-doanh-thu--ngưỡng-thuế).
 - **Menu Engineering** — tự phân loại món theo mô hình Ngôi sao/Bò kéo/Câu đố/Chó (Kasavana & Smith), biết ngay món nào nên đẩy mạnh, món nào nên xem lại.
 - **Dự đoán doanh thu** — ước tính doanh thu tuần/tháng tới dựa trên xu hướng và mùa vụ theo ngày trong tuần, có khoảng tin cậy rõ ràng, từ chối dự đoán nếu dữ liệu chưa đủ tin cậy.
 - **Khách hàng thân thiết** — tích điểm/đổi điểm theo đúng số tiền thực trả, tự hoàn tác chính xác khi huỷ/sửa đơn.
-- **Đặt món qua QR** — khách tự quét mã tại bàn, gửi yêu cầu gọi món, nhân viên nhận là lên thẳng màn Order để kiểm tra và tính tiền.
+- **Đặt món qua QR** — khách quét mã tại xe, tự chọn món và gửi yêu cầu; nhân viên nhận là lên thẳng màn Order để kiểm tra và tính tiền. Yêu cầu mới tự hiện sau khoảng 10 giây (huy hiệu xanh ở mục Đơn hàng, thanh thông báo ở màn Order, số chờ trên tiêu đề tab) — không cần tải lại trang, không popup, không âm thanh.
 - **Hoá đơn điện tử & VietQR** — kết nối SePay eInvoice để xuất hoá đơn điện tử, và tạo mã VietQR nhận chuyển khoản ngay trên hoá đơn — không qua cổng trung gian, không mất phí %.
 - **Nhân viên & bảng công** — mỗi nhân viên có ca làm việc riêng, tự động tổng hợp giờ làm và lương ước tính theo tháng.
 - **Quản lý nhiều xe** — 1 chủ quán vận hành nhiều xe/chi nhánh, xem báo cáo cộng dồn toàn hệ thống.
@@ -99,6 +101,24 @@ Cấu hình Nginx trỏ root vào `public/`, PHP-FPM, sau đó mở domain → `
 2. Ở màn hình **Mở ca**, nếu quán chưa có thực đơn thật, bấm **Thiết lập nhanh** để có ngay 2 món mẫu (Cà phê đá, Cà phê sữa) cùng đầy đủ nguyên liệu trong kho — hoặc tự vào **Thực đơn** để thêm món theo ý mình.
 3. Mở ca, bắt đầu bán ở tab **Order**.
 
+## 🧾 Sổ doanh thu & ngưỡng thuế
+
+Từ 01/01/2026 mọi hộ kinh doanh phải ghi sổ kế toán (Thông tư 152/2025/TT-BTC); hộ trong ngưỡng miễn thuế chỉ cần Sổ doanh thu bán hàng hóa, dịch vụ (mẫu S1a-HKD). Rót lập sổ này từ dữ liệu bán hàng. Vào **Quản lý → Báo cáo → Sổ doanh thu & ngưỡng thuế** (chỉ tài khoản chủ quán) để:
+
+- Xem, **in / lưu PDF** hoặc **tải CSV** sổ theo tháng hoặc cả năm — mỗi ngày có bán một dòng tổng doanh thu thực nhận, cộng theo từng tháng. Điền tên hộ kinh doanh và mã số thuế ở mục "Thông tin hộ kinh doanh"; địa điểm kinh doanh lấy từ địa chỉ của xe.
+- **Nhập doanh thu bán ngoài Rót** (app giao đồ ăn, bán sỉ...) để sổ và mức theo dõi ngưỡng đủ mọi kênh bán.
+- **Theo dõi ngưỡng miễn thuế**: doanh thu năm nay (cộng dồn tất cả xe của chủ quán) so với ngưỡng, kèm dự báo dựa trên nhịp bán 4 tuần gần nhất và ngày dự kiến chạm ngưỡng.
+
+Ngưỡng mặc định là **1 tỷ đồng/năm** (Nghị định 141/2026/NĐ-CP). Quy định thuế thay đổi khá nhanh nên ngưỡng không viết cứng trong code — muốn đổi, thêm vào `.env` (hoặc sửa `config/tax.php`):
+
+```env
+TAX_EXEMPT_THRESHOLD=1000000000
+```
+
+Nếu server đang cache cấu hình, chạy `php artisan config:clear` để áp dụng.
+
+> Rót chỉ **ghi chép và tính tham khảo**, không thay thế tư vấn thuế, không nộp tờ khai thay chủ hộ và không phải máy tính tiền kết nối cơ quan thuế. Hãy đối chiếu bản in với mẫu chính thức và hỏi cơ quan thuế/kế toán khi cần.
+
 ## 🔒 Bảo mật cần làm ngay khi lên production
 
 - Đặt `APP_DEBUG=false` trong `.env` (mặc định trong `.env.example` đã là `false`).
@@ -121,6 +141,10 @@ php artisan migrate
 ```bash
 mysqldump -u <user> -p <ten_database> > backup-truoc-nang-cap.sql
 ```
+
+Nếu server đang bật cache cấu hình (`php artisan config:cache`), chạy lại lệnh đó sau khi nâng cấp hoặc sửa `.env`.
+
+**Lưu ý khi lên v1.2.0:** doanh thu ở trang Báo cáo giờ là số tiền thực nhận. Nếu trước đây bạn dùng giảm giá cả đơn hoặc đổi điểm, doanh thu các kỳ cũ hiển thị sẽ thấp hơn trước — không mất dữ liệu, chỉ là số cũ đang tính dư.
 
 Xem [CHANGELOG.md](CHANGELOG.md) để biết mỗi phiên bản có thay đổi gì.
 
