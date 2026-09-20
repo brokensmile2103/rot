@@ -7,6 +7,8 @@ use App\Http\Controllers\Concerns\ResolvesCurrentLocation;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PeakHoursCalculator;
+use DateTimeImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -29,6 +31,7 @@ use Illuminate\View\View;
  * v1.0.8: xuất CSV — dùng dấu CHẤM PHẨY (;) làm phân cách cột thay vì dấu
  * phẩy mặc định, vì Excel ở cấu hình vùng Việt Nam mặc định hiểu dấu phẩy là
  * ký tự thập phân nên sẽ dồn hết cột nếu dùng dấu phẩy để phân tách.
+ * v1.1.3: trang "Giờ cao điểm" (heatmap giờ × thứ trong tuần) — xem peakHours().
  */
 class ReportController extends Controller
 {
@@ -96,6 +99,87 @@ class ReportController extends Controller
             'laborCost' => $operatingCosts['labor'],
             'rentCost' => $operatingCosts['rent'],
             'netProfit' => $current['profit'] - $operatingCosts['labor'] - $operatingCosts['rent'],
+        ]);
+    }
+
+    /** Các khoảng xem hợp lệ của trang Giờ cao điểm, tính bằng TUẦN (mỗi thứ xuất hiện đúng ngần ấy lần). */
+    private const PEAK_HOURS_WEEK_OPTIONS = [4, 8, 13];
+
+    private const PEAK_HOURS_DEFAULT_WEEKS = 8;
+
+    /** Dưới ngần này ngày dữ liệu, mỗi thứ mới xuất hiện 1-2 lần → số liệu chưa ổn định, cần cảnh báo. */
+    private const PEAK_HOURS_MIN_STABLE_DAYS = 14;
+
+    /**
+     * Heatmap GIỜ CAO ĐIỂM × THỨ TRONG TUẦN (v1.1.3) — trả lời câu hỏi "khung
+     * giờ nào, thứ mấy đông khách nhất" để xếp ca/chuẩn bị nguyên liệu. Xem
+     * PeakHoursCalculator để biết cách tính từng ô.
+     *
+     * Là 1 TRANG RIÊNG (không nhét vào trang Báo cáo chính) vì có bộ lọc riêng —
+     * số tuần xem và chỉ số hiển thị, độc lập với bộ chọn Ngày/Tuần/Tháng: heatmap
+     * theo thứ trong tuần chỉ có nghĩa khi gộp nhiều tuần — và để trang Báo cáo
+     * chính không phải chạy thêm truy vấn nặng mà phần lớn lần xem không cần tới.
+     *
+     * Khoảng xem kết thúc ở HẾT HÔM QUA (hôm nay chưa bán xong, tính vào sẽ làm
+     * các giờ chiều/tối của hôm nay bị thấp giả — cùng nguyên tắc với dự đoán
+     * doanh thu) và không kéo dài về trước ngày có đơn đầu tiên của quán (tránh
+     * những ngày "0 đơn" chỉ vì quán chưa mở làm loãng trung bình).
+     *
+     * Doanh thu = tổng OrderItem::line_total của đơn hoàn thành, đúng nguồn với
+     * trang Báo cáo (summarize()) nên 2 nơi luôn cùng 1 con số.
+     */
+    public function peakHours(Request $request, PeakHoursCalculator $calculator): View
+    {
+        $location = $this->currentLocation($request);
+
+        $weeks = (int) $request->query('weeks', self::PEAK_HOURS_DEFAULT_WEEKS);
+        $weeks = in_array($weeks, self::PEAK_HOURS_WEEK_OPTIONS, true) ? $weeks : self::PEAK_HOURS_DEFAULT_WEEKS;
+        $metric = $request->query('metric') === PeakHoursCalculator::METRIC_REVENUE
+            ? PeakHoursCalculator::METRIC_REVENUE
+            : PeakHoursCalculator::METRIC_ORDERS;
+
+        $windowEnd = Carbon::today()->subDay();
+        $windowStart = $windowEnd->copy()->subDays($weeks * 7 - 1);
+
+        $firstOrderAt = Order::query()
+            ->where('location_id', $location->id)
+            ->where('status', 'hoan_thanh')
+            ->min('completed_at');
+
+        $from = $windowStart;
+        if ($firstOrderAt) {
+            $firstOrderDay = Carbon::parse($firstOrderAt)->startOfDay();
+            $from = $firstOrderDay->greaterThan($windowStart) ? $firstOrderDay : $windowStart;
+        }
+
+        $data = ['hasData' => false, 'dayCount' => 0, 'totalOrders' => 0];
+        if ($firstOrderAt && $from->lessThanOrEqualTo($windowEnd)) {
+            // toBase(): chỉ cần 2 cột thô cho mỗi đơn, không dựng model Eloquent cho hàng
+            // chục nghìn đơn (13 tuần × vài trăm đơn/ngày). Giờ/thứ được tách ở PHP
+            // (theo múi giờ ứng dụng) thay vì HOUR()/DAYOFWEEK() của MySQL để không
+            // phụ thuộc múi giờ của phiên kết nối database.
+            $sales = Order::query()
+                ->select(['orders.id', 'orders.completed_at'])
+                ->where('location_id', $location->id)
+                ->where('status', 'hoan_thanh')
+                ->whereBetween('completed_at', [$from->copy()->startOfDay(), $windowEnd->copy()->endOfDay()])
+                ->withSum('items as revenue', 'line_total')
+                ->toBase()
+                ->get()
+                ->map(fn ($row) => [new DateTimeImmutable($row->completed_at), (float) $row->revenue]);
+
+            $data = $calculator->compute($sales, $from, $windowEnd);
+        }
+
+        return view('owner.reports.peak-hours', [
+            'location' => $location,
+            'data' => $data,
+            'weeks' => $weeks,
+            'weekOptions' => self::PEAK_HOURS_WEEK_OPTIONS,
+            'metric' => $metric,
+            'from' => $from->copy(),
+            'to' => $windowEnd->copy(),
+            'isUnstable' => $data['dayCount'] < self::PEAK_HOURS_MIN_STABLE_DAYS,
         ]);
     }
 

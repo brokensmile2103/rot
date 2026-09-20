@@ -76,6 +76,7 @@ class DataExportService
             '13-don-hang.csv' => $this->orders($location),
             '14-chi-tiet-don-hang.csv' => $this->orderItems($location),
             '15-tuy-chon-trong-don.csv' => $this->orderItemModifiers($location),
+            '16-dieu-chinh-kho.csv' => $this->stockAdjustments($location),
         ];
     }
 
@@ -241,6 +242,28 @@ class DataExportService
             'rows' => $stockIns->map(fn ($s) => [
                 $s->id, $s->ingredient->name ?? '(đã xoá)', (float) $s->quantity, round((float) $s->total_cost),
                 $s->note, $s->creator->name ?? '', optional($s->created_at)->format('d/m/Y H:i'),
+            ])->all(),
+        ];
+    }
+
+    /** Nhật ký sửa trực tiếp tồn kho/giá vốn (v1.1.3) — đặt sau các file cũ để không đổi số thứ tự file đã có. */
+    private function stockAdjustments(Location $location): array
+    {
+        $rows = \App\Models\StockAdjustment::where('location_id', $location->id)
+            ->with(['ingredient', 'user'])
+            ->orderBy('id')
+            ->get();
+
+        return [
+            'header' => [
+                'ID', 'Nguyên liệu', 'Lý do', 'Tồn kho trước', 'Tồn kho sau', 'Chênh lệch tồn kho',
+                'Giá vốn TB trước (đ)', 'Giá vốn TB sau (đ)', 'Ghi chú', 'Người sửa', 'Thời gian',
+            ],
+            'rows' => $rows->map(fn ($a) => [
+                $a->id, $a->ingredient->name ?? '(đã xoá)', $a->reasonLabel(),
+                (float) $a->stock_before, (float) $a->stock_after, $a->stockDelta(),
+                (float) $a->cost_before, (float) $a->cost_after,
+                $a->note, $a->user->name ?? '', optional($a->created_at)->format('d/m/Y H:i'),
             ])->all(),
         ];
     }

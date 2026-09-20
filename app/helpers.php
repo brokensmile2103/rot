@@ -31,3 +31,28 @@ if (! function_exists('quantity')) {
         return $decPart !== null ? $intFormatted.','.$decPart : $intFormatted;
     }
 }
+
+if (! function_exists('money_compact')) {
+    /**
+     * Số tiền RÚT GỌN cho những ô rất hẹp (VD: ô heatmap giờ cao điểm trên điện
+     * thoại): 125.000 → "125k", 1.250.000 → "1,3tr", 12.000.000 → "12tr". CHỈ để
+     * hiển thị gọn — chỗ nào cần số tiền chính xác vẫn dùng money().
+     */
+    function money_compact($value): string
+    {
+        $amount = (float) $value;
+
+        // >= 999.500 làm tròn theo nghìn sẽ ra "1.000k" — chuyển sang đơn vị triệu cho gọn.
+        if (abs($amount) >= 999_500) {
+            $millions = round($amount / 1_000_000, 1);
+
+            return rtrim(rtrim(number_format($millions, 1, ',', '.'), '0'), ',').'tr';
+        }
+
+        if (abs($amount) >= 1_000) {
+            return number_format(round($amount / 1_000), 0, ',', '.').'k';
+        }
+
+        return number_format(round($amount), 0, ',', '.');
+    }
+}

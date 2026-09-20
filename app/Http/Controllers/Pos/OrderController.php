@@ -46,9 +46,6 @@ class OrderController extends Controller
 
         $categories = $this->loadCategories($location);
         $draftCount = $shift->orders()->where('status', 'nhap')->count();
-        $pendingRequestCount = $location->qr_ordering_enabled
-            ? $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->count()
-            : 0;
 
         return view('pos.order', [
             'location' => $location,
@@ -57,7 +54,6 @@ class OrderController extends Controller
             'editingOrder' => null,
             'initialCart' => [],
             'draftCount' => $draftCount,
-            'pendingRequestCount' => $pendingRequestCount,
             // Dùng ĐÚNG 1 định nghĩa "chưa có thực đơn thật" với trang Cài đặt
             // (QuickSetupService coi món placeholder "Cà phê đen" tự tạo lúc
             // đăng ký là CHƯA thiết lập gì) — tránh case món placeholder vẫn
@@ -218,6 +214,29 @@ class OrderController extends Controller
     }
 
     /**
+     * Endpoint cho cơ chế polling (v1.1.3) — trình duyệt của nhân viên/chủ quán gọi
+     * định kỳ (xem resources/js/qr-requests.js) để lấy SỐ yêu cầu gọi món từ khách
+     * (QR) đang chờ nhận, rồi tự cập nhật badge menu, thanh thông báo ở màn Order và
+     * tiêu đề tab mà không cần tải lại trang.
+     *
+     * Chỉ trả về đúng 1 con số (và cờ bật/tắt tính năng) — KHÔNG trả nội dung
+     * món/ghi chú/SĐT khách: chi tiết chỉ hiện ở trang "Đơn hàng" sau khi bấm vào xem.
+     */
+    public function pendingCustomerRequests(Request $request): JsonResponse
+    {
+        $location = $this->currentLocation($request, false);
+
+        $pendingCount = $location->qr_ordering_enabled
+            ? $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->count()
+            : 0;
+
+        return response()->json([
+            'enabled' => (bool) $location->qr_ordering_enabled,
+            'pending_count' => $pendingCount,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    /**
      * Nhân viên "Nhận đơn" 1 yêu cầu khách gửi qua QR — mở màn Order BÌNH
      * THƯỜNG (không phải sửa đơn, $editingOrder = null) với giỏ hàng nạp sẵn
      * từ yêu cầu đó, để nhân viên rà lại lần cuối (món còn hàng không, có
@@ -233,7 +252,14 @@ class OrderController extends Controller
             return redirect()->route('shift.create')->with('status', 'Mở ca trước khi nhận đơn nhé.');
         }
 
-        $requestModel = $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->findOrFail($customerRequest);
+        // Không dùng findOrFail(): giờ có thông báo realtime nên 2 thiết bị (2 nhân
+        // viên, hoặc chủ quán + nhân viên) rất dễ cùng bấm "Nhận đơn" 1 yêu cầu —
+        // người bấm sau phải nhận thông báo dễ hiểu chứ không phải trang 404.
+        $requestModel = $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->find($customerRequest);
+
+        if (! $requestModel) {
+            return redirect()->route('pos.orders.index')->with('status', 'Yêu cầu này đã được xử lý rồi (có thể người khác vừa nhận hoặc từ chối).');
+        }
 
         $categories = $this->loadCategories($location);
 
@@ -250,11 +276,24 @@ class OrderController extends Controller
 
         $skippedCount = count($requestModel->items) - $initialCart->count();
 
-        $requestModel->update([
-            'status' => 'da_nhan',
-            'handled_by' => $request->user()->id,
-            'handled_at' => now(),
-        ]);
+        // "Giành" yêu cầu bằng 1 câu UPDATE có điều kiện status = cho_xac_nhan (nguyên
+        // tử ở tầng database) thay vì update() trên model đã đọc từ trước — nếu 2
+        // người bấm gần như đồng thời, chỉ ĐÚNG 1 người cập nhật được dòng (số dòng
+        // bị ảnh hưởng = 1), người còn lại nhận 0 và được báo đã có người xử lý.
+        $claimed = $location->customerOrderRequests()
+            ->whereKey($requestModel->id)
+            ->where('status', 'cho_xac_nhan')
+            ->update([
+                'status' => 'da_nhan',
+                'handled_by' => $request->user()->id,
+                'handled_at' => now(),
+            ]);
+
+        if ($claimed === 0) {
+            return redirect()->route('pos.orders.index')->with('status', 'Yêu cầu này vừa được người khác nhận rồi.');
+        }
+
+        $requestModel->refresh();
 
         return view('pos.order', [
             'location' => $location,
@@ -263,7 +302,6 @@ class OrderController extends Controller
             'editingOrder' => null,
             'initialCart' => $initialCart,
             'draftCount' => $shift->orders()->where('status', 'nhap')->count(),
-            'pendingRequestCount' => $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->count(),
             'showQuickSetupBanner' => false,
             'acceptedRequest' => $requestModel,
             'skippedRequestItems' => $skippedCount,
@@ -275,14 +313,19 @@ class OrderController extends Controller
     {
         $location = $this->currentLocation($request, false);
 
-        $requestModel = $location->customerOrderRequests()->where('status', 'cho_xac_nhan')->findOrFail($customerRequest);
-        $requestModel->update([
-            'status' => 'tu_choi',
-            'handled_by' => $request->user()->id,
-            'handled_at' => now(),
-        ]);
+        $rejected = $location->customerOrderRequests()
+            ->whereKey($customerRequest)
+            ->where('status', 'cho_xac_nhan')
+            ->update([
+                'status' => 'tu_choi',
+                'handled_by' => $request->user()->id,
+                'handled_at' => now(),
+            ]);
 
-        return back()->with('status', 'Đã từ chối yêu cầu.');
+        return redirect()->route('pos.orders.index')->with(
+            'status',
+            $rejected ? 'Đã từ chối yêu cầu.' : 'Yêu cầu này đã được xử lý rồi (có thể người khác vừa nhận hoặc từ chối).'
+        );
     }
 
     /** Mở lại đơn để sửa (hoặc tiếp tục đơn nháp) — dùng LẠI y hệt giao diện order, nạp sẵn các món đã có. */
