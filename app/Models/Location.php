@@ -15,7 +15,7 @@ class Location extends Model
      * bao giờ nhận trực tiếp từ input người dùng.
      */
     protected $fillable = [
-        'name', 'address', 'font_scale', 'accent_color',
+        'name', 'address', 'tax_household_name', 'tax_code', 'font_scale', 'accent_color',
         'receipt_paper_width', 'receipt_enabled', 'bank_bin', 'bank_account_no', 'bank_account_name',
         'loyalty_enabled', 'points_earn_rate', 'points_redeem_value',
         'einvoice_enabled', 'einvoice_sandbox', 'einvoice_client_id', 'einvoice_client_secret',
@@ -63,6 +63,12 @@ class Location extends Model
     public function customerOrderRequests()
     {
         return $this->hasMany(CustomerOrderRequest::class);
+    }
+
+    /** Doanh thu ngoài Rót do chủ quán tự nhập (v1.2.0) — xem ExternalRevenue. */
+    public function externalRevenues()
+    {
+        return $this->hasMany(ExternalRevenue::class);
     }
 
     public function owner()

@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\ResolvesCurrentLocation;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\OrderRevenue;
 use App\Services\PeakHoursCalculator;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
@@ -88,6 +89,7 @@ class ReportController extends Controller
             'revenue' => $current['revenue'],
             'totalCost' => $current['cost'],
             'totalProfit' => $current['profit'],
+            'orderDiscount' => $current['orderDiscount'],
             'rows' => $current['rows'],
             'revenueChange' => $this->percentChange($current['revenue'], $previous['revenue']),
             'profitChange' => $this->percentChange($current['profit'], $previous['profit']),
@@ -125,7 +127,7 @@ class ReportController extends Controller
      * doanh thu) và không kéo dài về trước ngày có đơn đầu tiên của quán (tránh
      * những ngày "0 đơn" chỉ vì quán chưa mở làm loãng trung bình).
      *
-     * Doanh thu = tổng OrderItem::line_total của đơn hoàn thành, đúng nguồn với
+     * Doanh thu = Order::total (tiền thực nhận) của đơn hoàn thành, đúng định nghĩa với
      * trang Báo cáo (summarize()) nên 2 nơi luôn cùng 1 con số.
      */
     public function peakHours(Request $request, PeakHoursCalculator $calculator): View
@@ -154,19 +156,18 @@ class ReportController extends Controller
 
         $data = ['hasData' => false, 'dayCount' => 0, 'totalOrders' => 0];
         if ($firstOrderAt && $from->lessThanOrEqualTo($windowEnd)) {
-            // toBase(): chỉ cần 2 cột thô cho mỗi đơn, không dựng model Eloquent cho hàng
+            // toBase(): chỉ cần vài cột thô cho mỗi đơn, không dựng model Eloquent cho hàng
             // chục nghìn đơn (13 tuần × vài trăm đơn/ngày). Giờ/thứ được tách ở PHP
             // (theo múi giờ ứng dụng) thay vì HOUR()/DAYOFWEEK() của MySQL để không
             // phụ thuộc múi giờ của phiên kết nối database.
             $sales = Order::query()
-                ->select(['orders.id', 'orders.completed_at'])
+                ->select(['orders.id', 'orders.completed_at', 'orders.total'])
                 ->where('location_id', $location->id)
                 ->where('status', 'hoan_thanh')
                 ->whereBetween('completed_at', [$from->copy()->startOfDay(), $windowEnd->copy()->endOfDay()])
-                ->withSum('items as revenue', 'line_total')
                 ->toBase()
                 ->get()
-                ->map(fn ($row) => [new DateTimeImmutable($row->completed_at), (float) $row->revenue]);
+                ->map(fn ($row) => [new DateTimeImmutable($row->completed_at), (float) $row->total]);
 
             $data = $calculator->compute($sales, $from, $windowEnd);
         }
@@ -213,7 +214,8 @@ class ReportController extends Controller
             fputcsv($out, ['Khoảng thời gian: '.$start->format('d/m/Y').' - '.$end->format('d/m/Y')], ';');
             fputcsv($out, ['Xuất lúc: '.now()->format('d/m/Y H:i')], ';');
             fputcsv($out, [], ';');
-            fputcsv($out, ['Tổng doanh thu (đ)', round($current['revenue'])], ';');
+            fputcsv($out, ['Tổng doanh thu thực nhận (đ)', round($current['revenue'])], ';');
+            fputcsv($out, ['Trong đó đã trừ giảm giá cả đơn/điểm đổi (đ)', round($current['orderDiscount'])], ';');
             fputcsv($out, ['Tổng giá vốn (đ)', round($current['cost'])], ';');
             fputcsv($out, ['Tổng lợi nhuận (đ)', round($current['profit'])], ';');
             fputcsv($out, ['Chi phí nhân sự (đ)', round($operatingCosts['labor'])], ';');
@@ -222,7 +224,7 @@ class ReportController extends Controller
             fputcsv($out, [], ';');
 
             fputcsv($out, [
-                'Tên món', 'Số lượng bán', 'Doanh thu (đ)', 'Giá vốn (đ)', 'Lợi nhuận (đ)',
+                'Tên món', 'Số lượng bán', 'Doanh thu thực nhận (đ)', 'Giá vốn (đ)', 'Lợi nhuận (đ)',
                 'Lợi nhuận/món (đ)', 'Tỷ trọng bán (%)', 'Phân loại Menu Engineering',
             ], ';');
 
@@ -309,24 +311,41 @@ class ReportController extends Controller
         };
     }
 
-    /** Tổng hợp doanh thu/giá vốn/lợi nhuận + chi tiết theo món trong 1 khoảng thời gian. */
+    /**
+     * Tổng hợp doanh thu/giá vốn/lợi nhuận + chi tiết theo món trong 1 khoảng thời gian.
+     *
+     * v1.2.0 — DOANH THU = TIỀN THỰC NHẬN: tổng Order::total của đơn hoàn thành (đã trừ
+     * giảm giá từng món, giảm giá CẢ ĐƠN và điểm khách đổi) — đúng số tiền khách trả và
+     * khớp số Chốt ca. Trước đây cộng line_total nên doanh thu bị báo cao hơn thực tế mỗi
+     * khi có giảm giá cả đơn/đổi điểm. Bảng theo món được phân bổ phần giảm trừ cấp đơn
+     * theo tỷ lệ giá trị dòng (xem OrderRevenue) để tổng các món luôn khớp tổng doanh thu.
+     */
     private function summarize(Location $location, Carbon $start, Carbon $end): array
     {
+        $completedOrders = fn ($q) => $q->where('location_id', $location->id)
+            ->where('status', 'hoan_thanh')
+            ->whereBetween('completed_at', [$start, $end]);
+
         $items = OrderItem::query()
-            ->whereHas('order', function ($q) use ($location, $start, $end) {
-                $q->where('location_id', $location->id)
-                    ->where('status', 'hoan_thanh')
-                    ->whereBetween('completed_at', [$start, $end]);
-            })
-            ->with('variant.product')
+            ->whereHas('order', $completedOrders)
+            ->with(['variant.product', 'order:id,subtotal,total'])
             ->get();
 
-        $revenue = (float) $items->sum('line_total');
+        $orderSums = $completedOrders(Order::query())
+            ->selectRaw('COALESCE(SUM(total), 0) AS revenue, COALESCE(SUM(subtotal), 0) AS gross')
+            ->first();
+
+        $revenue = (float) $orderSums->revenue;
+        // Phần đã trừ ở cấp ĐƠN (giảm giá cả đơn + điểm đổi) — hiện ra để chủ quán hiểu vì sao
+        // doanh thu thấp hơn tổng giá trị các món khi có giảm giá.
+        $orderDiscount = max(0.0, (float) $orderSums->gross - $revenue);
         $cost = (float) $items->sum('total_cost');
 
         $rows = $items->groupBy('product_variant_id')->map(function ($group) {
             $variant = $group->first()->variant;
-            $lineRevenue = (float) $group->sum('line_total');
+            $lineRevenue = (float) $group->sum(fn ($item) => OrderRevenue::allocate(
+                (float) $item->line_total, (float) $item->order->subtotal, (float) $item->order->total
+            ));
             $lineCost = (float) $group->sum('total_cost');
 
             return [
@@ -338,7 +357,13 @@ class ReportController extends Controller
             ];
         })->sortByDesc('revenue')->values();
 
-        return ['revenue' => $revenue, 'cost' => $cost, 'profit' => $revenue - $cost, 'rows' => $rows];
+        return [
+            'revenue' => $revenue,
+            'cost' => $cost,
+            'profit' => $revenue - $cost,
+            'orderDiscount' => $orderDiscount,
+            'rows' => $rows,
+        ];
     }
 
     /**
@@ -576,23 +601,20 @@ class ReportController extends Controller
     /**
      * Doanh thu THEO NGÀY trong khoảng [start, end] — LUÔN trả đủ mọi ngày
      * trong khoảng kể cả ngày không bán được gì (giá trị 0), để các phép
-     * tính trung bình/mùa vụ không bị lệch do thiếu ngày. Dùng chung nguồn
-     * dữ liệu (OrderItem::line_total của đơn hoàn thành) với summarize() để
-     * số dự đoán nhất quán với số "Doanh thu" đang hiển thị trên báo cáo.
+     * tính trung bình/mùa vụ không bị lệch do thiếu ngày. Dùng chung định nghĩa
+     * doanh thu (tiền thực nhận — Order::total của đơn hoàn thành) với summarize()
+     * để số dự đoán nhất quán với số "Doanh thu" đang hiển thị trên báo cáo.
      */
     private function dailyRevenueSeries(Location $location, Carbon $start, Carbon $end): \Illuminate\Support\Collection
     {
-        $items = OrderItem::query()
-            ->whereHas('order', function ($q) use ($location, $start, $end) {
-                $q->where('location_id', $location->id)
-                    ->where('status', 'hoan_thanh')
-                    ->whereBetween('completed_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()]);
-            })
-            ->with('order:id,completed_at')
-            ->get();
-
-        $byDay = $items->groupBy(fn ($item) => $item->order->completed_at->toDateString())
-            ->map(fn ($group) => (float) $group->sum('line_total'));
+        $byDay = Order::query()
+            ->where('location_id', $location->id)
+            ->where('status', 'hoan_thanh')
+            ->whereBetween('completed_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('DATE(completed_at) AS sale_date, SUM(total) AS day_revenue')
+            ->groupBy('sale_date')
+            ->pluck('day_revenue', 'sale_date')
+            ->map(fn ($value) => (float) $value);
 
         $series = collect();
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {

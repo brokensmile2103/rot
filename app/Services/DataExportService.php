@@ -77,6 +77,7 @@ class DataExportService
             '14-chi-tiet-don-hang.csv' => $this->orderItems($location),
             '15-tuy-chon-trong-don.csv' => $this->orderItemModifiers($location),
             '16-dieu-chinh-kho.csv' => $this->stockAdjustments($location),
+            '17-doanh-thu-ngoai-rot.csv' => $this->externalRevenues($location),
         ];
     }
 
@@ -264,6 +265,21 @@ class DataExportService
                 (float) $a->stock_before, (float) $a->stock_after, $a->stockDelta(),
                 (float) $a->cost_before, (float) $a->cost_after,
                 $a->note, $a->user->name ?? '', optional($a->created_at)->format('d/m/Y H:i'),
+            ])->all(),
+        ];
+    }
+
+    /** v1.2.0 — Doanh thu ngoài Rót do chủ quán tự nhập (dùng cho Sổ doanh thu và theo dõi ngưỡng thuế). */
+    private function externalRevenues(Location $location): array
+    {
+        $rows = \App\Models\ExternalRevenue::where('location_id', $location->id)
+            ->with('user')->orderBy('revenue_date')->orderBy('id')->get();
+
+        return [
+            'header' => ['ID', 'Ngày', 'Số tiền (đ)', 'Nội dung', 'Người nhập', 'Nhập lúc'],
+            'rows' => $rows->map(fn ($e) => [
+                $e->id, $e->revenue_date->format('d/m/Y'), round((float) $e->amount), $e->description,
+                $e->user->name ?? '', optional($e->created_at)->format('d/m/Y H:i'),
             ])->all(),
         ];
     }
