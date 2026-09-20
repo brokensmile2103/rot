@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import { createQrStore } from './qr-requests';
 
 window.Alpine = Alpine;
 
@@ -60,9 +61,19 @@ window.resizablePanel = function (storageKey, defaultWidth, min, max, direction 
 Alpine.store('nav', {
     orderBadgeCount: window.__navBadgeCounts?.order ?? 0,
     lowStockBadgeCount: window.__navBadgeCounts?.lowStock ?? 0,
+    // Số yêu cầu gọi món từ khách (QR) đang chờ nhận — cập nhật bằng polling
+    // (xem qr-requests.js), hiện ở badge menu "Đơn hàng", thanh thông báo màn
+    // Order và tiêu đề tab trình duyệt.
+    pendingRequestCount: window.__navBadgeCounts?.pendingRequests ?? 0,
 });
 
+// Polling số yêu cầu gọi món QR đang chờ (v1.1.3). Cấu hình do layouts/app in ra;
+// các trang KHÔNG dùng layout đó (đăng nhập, trình cài đặt /install, menu công khai của khách...)
+// không có window.__qrRequests nên start() tự bỏ qua, không hỏi server gì cả.
+Alpine.store('qr', createQrStore(Alpine, window.__qrRequests ?? {}));
+
 Alpine.start();
+Alpine.store('qr').start();
 
 /**
  * Tự động định dạng phân cách nghìn (kiểu Việt Nam: dấu chấm) cho các ô nhập

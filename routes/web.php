@@ -55,6 +55,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/order/luu-nhap', [OrderController::class, 'saveDraft'])->name('pos.draft.store');
 
     Route::get('/don-hang', [OrderController::class, 'orders'])->name('pos.orders.index');
+    // Polling nhẹ (v1.1.3) — trình duyệt hỏi định kỳ xem có yêu cầu gọi món mới từ
+    // khách (QR) không để hiện thông báo. Giới hạn 60 lần/phút/tài khoản: đủ dư
+    // cho nhiều tab/thiết bị cùng mở (mỗi tab ~6 lần/phút) mà vẫn chặn được
+    // script chạy sai/lặp vô hạn làm nặng máy chủ hosting rẻ.
+    Route::get('/don-hang/yeu-cau/dang-cho', [OrderController::class, 'pendingCustomerRequests'])
+        ->middleware('throttle:60,1')->name('pos.orders.requests.pending');
     Route::post('/don-hang/yeu-cau/{customerRequest}/nhan', [OrderController::class, 'acceptCustomerRequest'])->name('pos.orders.requests.accept');
     Route::post('/don-hang/yeu-cau/{customerRequest}/tu-choi', [OrderController::class, 'rejectCustomerRequest'])->name('pos.orders.requests.reject');
     Route::get('/don-hang/{order}/sua', [OrderController::class, 'edit'])->name('pos.orders.edit');
@@ -112,7 +118,9 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
     Route::delete('/tuy-chon/cong-thuc/{recipe}', [ModifierGroupController::class, 'deleteModifierRecipe'])->name('modifier-groups.modifier.recipe.delete');
 
     Route::get('/kho', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('/kho/nhat-ky-dieu-chinh', [InventoryController::class, 'adjustments'])->name('inventory.adjustments');
     Route::get('/kho/{ingredient}/lich-su-nhap', [InventoryController::class, 'stockInHistory'])->name('inventory.stock-in.history');
+    Route::get('/kho/{ingredient}/lich-su-dieu-chinh', [InventoryController::class, 'adjustmentHistory'])->name('inventory.adjustments.history');
     Route::post('/kho', [InventoryController::class, 'storeIngredient'])->name('inventory.store');
     Route::put('/kho/{ingredient}', [InventoryController::class, 'updateIngredient'])->name('inventory.update');
     Route::delete('/kho/{ingredient}', [InventoryController::class, 'deleteIngredient'])->name('inventory.delete');
@@ -121,6 +129,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
 
     Route::get('/bao-cao', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/bao-cao/xuat-csv', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('/bao-cao/gio-cao-diem', [ReportController::class, 'peakHours'])->name('reports.peak-hours');
 
     Route::get('/cai-dat', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/cai-dat/giao-dien', [SettingsController::class, 'updateAppearance'])->name('settings.appearance');

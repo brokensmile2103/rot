@@ -37,11 +37,14 @@
 
     {{-- Khu vực chọn món --}}
     <div class="flex-1 flex flex-col min-w-0 min-h-0 @container">
-        @if(($pendingRequestCount ?? 0) > 0)
-            <a href="{{ route('pos.orders.index') }}" class="shrink-0 bg-blue-50 border-b border-blue-200 text-blue-800 text-xs font-semibold text-center py-2 flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-qrcode"></i>{{ $pendingRequestCount }} yêu cầu mới từ khách (QR) — bấm để xem
-            </a>
-        @endif
+        {{-- Số yêu cầu QR đang chờ lấy từ Alpine.store('nav') (khởi tạo bởi layout, cập nhật
+             bằng polling — resources/js/qr-requests.js) nên banner tự hiện/ẩn/đổi số
+             ngay khi có khách gửi yêu cầu mà KHÔNG cần tải lại trang (tải lại sẽ làm
+             mất giỏ hàng nhân viên đang nhập dở). --}}
+        <a x-show="$store.nav.pendingRequestCount > 0" x-cloak href="{{ route('pos.orders.index') }}"
+           class="shrink-0 bg-blue-50 border-b border-blue-200 text-blue-800 text-xs font-semibold text-center py-2 flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-qrcode"></i><span><span x-text="$store.nav.pendingRequestCount"></span> yêu cầu mới từ khách (QR) — bấm để xem</span>
+        </a>
         @if(($draftCount ?? 0) > 0)
             <a href="{{ route('pos.orders.index') }}" class="shrink-0 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-semibold text-center py-2 flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-clock"></i>{{ $draftCount }} đơn đang chờ — bấm để tiếp tục

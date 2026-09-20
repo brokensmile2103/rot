@@ -2,7 +2,15 @@
 
 Chỉ ghi những thay đổi ảnh hưởng tới người dùng (tính năng mới, sửa lỗi quan trọng). Không ghi các thay đổi kỹ thuật nội bộ không ảnh hưởng tới cách sử dụng.
 
-## v1.1.2 (hiện tại)
+## v1.1.3 (hiện tại)
+
+- **Thông báo khi khách gửi yêu cầu gọi món qua QR**: trước đây yêu cầu chỉ hiện khi nhân viên tự mở trang "Đơn hàng". Giờ ứng dụng tự kiểm tra định kỳ (~10 giây/lần, rất nhẹ) và cập nhật ngay, không cần tải lại trang: huy hiệu xanh ở menu "Đơn hàng" (ưu tiên hơn huy hiệu tổng số đơn — xử lý hết thì tự trở về số tổng đơn), thanh thông báo xanh ở đầu màn Order (không che giỏ hàng đang thao tác, không mất giỏ hàng nhập dở) và tiêu đề tab trình duyệt, vd: "(2) Đơn hàng · Rót". Không có cửa sổ nổi và không dùng âm thanh. Chỉ cần thêm chạy `php artisan migrate` (thêm 1 chỉ mục giúp việc kiểm tra này luôn nhanh).
+- **Nhận/Từ chối yêu cầu QR trên nhiều thiết bị**: nếu 2 người cùng bấm "Nhận đơn" 1 yêu cầu, người bấm sau được báo "đã được người khác nhận" thay vì gặp trang lỗi, và yêu cầu không thể bị nhận 2 lần.
+- **Giờ cao điểm**: trang mới (nút "Giờ cao điểm" ở trang Báo cáo) — bảng nhiệt theo giờ × thứ trong tuần cho thấy khung giờ, ngày nào đông khách nhất để xếp ca và chuẩn bị nguyên liệu. Xem theo 4/8/13 tuần gần nhất, theo số đơn hoặc doanh thu; mỗi ô là mức trung bình của 1 ngày thứ đó nên so sánh công bằng giữa các ô. Kèm giờ đông nhất, ngày đông nhất và top 3 khung giờ vàng. Không tính hôm nay (chưa bán xong); quán mới có dưới 14 ngày dữ liệu sẽ có cảnh báo "chỉ để tham khảo".
+- **Nhật ký điều chỉnh kho**: mỗi lần sửa trực tiếp "Tồn kho" hoặc "Giá vốn TB" của nguyên liệu giờ được ghi lại — số liệu trước/sau, chênh lệch, lý do (Kiểm kê thực tế / Hao hụt-hư hỏng-hết hạn / Sửa số liệu nhập sai / Khác), ghi chú, người sửa, thời điểm. Khi đổi số, ô chọn lý do tự hiện ra và là bắt buộc; chỉ đổi tên/đơn vị/ngưỡng cảnh báo thì không cần. Xem ở tab "Điều chỉnh" trong "Lịch sử" của từng nguyên liệu, hoặc trang "Nhật ký điều chỉnh" (nút ở đầu trang Kho) với bộ lọc theo nguyên liệu/lý do/thời gian và tổng giá trị thiếu hụt/dư ước tính theo giá vốn. Cũng có trong file "Xuất dữ liệu" (`16-dieu-chinh-kho.csv`). Cần chạy `php artisan migrate`.
+- **Sửa lỗi sửa nguyên liệu ghi đè tồn kho**: nếu mở form sửa nguyên liệu rồi trong lúc đó có đơn bán ra (làm tồn kho giảm), bấm Lưu chỉ để đổi tên trước đây sẽ ghi đè tồn kho cũ lên số đúng. Giờ chỉ số liệu nào bạn thật sự chỉnh mới bị đổi.
+
+## v1.1.2
 
 - **Đặt món qua QR**: Cài đặt → "Đặt món qua QR" — bật lên để có ngay mã QR/link dán tại xe, khách tự quét xem thực đơn và gửi yêu cầu gọi món (không thanh toán trực tiếp). Yêu cầu hiện ở trang "Đơn hàng" để nhân viên Nhận/Từ chối; bấm Nhận sẽ mở thẳng màn Order với giỏ hàng điền sẵn để kiểm tra lại trước khi tính tiền. Nếu quán đang bật "Khách hàng thân thiết", khách điền thêm SĐT lúc gửi yêu cầu sẽ tự động tra cứu/áp dụng tích điểm ngay khi nhân viên nhận đơn.
 - **Badge số ở "Đơn hàng" và "Kho nguyên liệu"**: hiện số đơn trong ca và số nguyên liệu sắp hết ngay trên thanh điều hướng (cả PC lẫn mobile) — theo dõi nhanh mà không cần bấm vào từng trang.

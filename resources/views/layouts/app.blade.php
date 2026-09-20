@@ -37,7 +37,16 @@
         window.__navBadgeCounts = {
             order: {{ (int) ($orderBadgeCount ?? 0) }},
             lowStock: {{ (int) ($lowStockBadgeCount ?? 0) }},
+            pendingRequests: {{ (int) ($pendingRequestCount ?? 0) }},
         };
+        @if(! empty($qrLocationId))
+        // Cấu hình polling yêu cầu gọi món qua QR (xem resources/js/qr-requests.js).
+        window.__qrRequests = {
+            locationId: {{ (int) $qrLocationId }},
+            enabled: {{ ! empty($qrOrderingEnabled) ? 'true' : 'false' }},
+            url: @js(route('pos.orders.requests.pending', [], false)),
+        };
+        @endif
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -82,7 +91,10 @@
                           {{ $isActive ? 'bg-[var(--accent)] text-white' : 'text-neutral-600 hover:bg-neutral-100' }}">
                     <i class="fa-solid {{ $item['icon'] }} w-5 text-center"></i>{{ $item['label'] }}
                     @if($item['route'] === 'pos.orders.index')
-                        <x-nav-badge :count="$orderBadgeCount" store="orderBadgeCount" class="ml-auto" :inverted="$isActive" />
+                        {{-- 1 badge duy nhất: ưu tiên badge XANH (yêu cầu gọi món QR đang chờ nhận);
+                             xử lý hết thì tự trở về badge tổng số đơn trong ca. --}}
+                        <x-nav-badge :count="$pendingRequestCount" store="pendingRequestCount" color="info" title="Yêu cầu gọi món từ khách (QR) đang chờ" class="ml-auto" :inverted="$isActive" />
+                        <x-nav-badge :count="$orderBadgeCount" store="orderBadgeCount" hide-when="pendingRequestCount" class="ml-auto" :inverted="$isActive" />
                     @endif
                 </a>
             @endforeach
@@ -264,7 +276,8 @@
                 <span class="relative">
                     <i class="fa-solid {{ $item['icon'] }} text-lg"></i>
                     @if($item['route'] === 'pos.orders.index')
-                        <x-nav-badge :count="$orderBadgeCount" store="orderBadgeCount" class="absolute -top-1.5 -right-3.5" />
+                        <x-nav-badge :count="$pendingRequestCount" store="pendingRequestCount" color="info" title="Yêu cầu gọi món từ khách (QR) đang chờ" class="absolute -top-1.5 -right-3.5" />
+                        <x-nav-badge :count="$orderBadgeCount" store="orderBadgeCount" hide-when="pendingRequestCount" class="absolute -top-1.5 -right-3.5" />
                     @endif
                 </span>
                 <span class="text-xs font-semibold">{{ $item['label'] }}</span>

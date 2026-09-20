@@ -7,7 +7,10 @@
         <div class="w-10 h-10 rounded-xl bg-[var(--accent-light)] text-[var(--accent-text)] flex items-center justify-center shrink-0">
             <i class="fa-solid fa-chart-line"></i>
         </div>
-        <h2 class="text-lg font-bold text-neutral-900">Báo cáo lợi nhuận</h2>
+        <h2 class="text-lg font-bold text-neutral-900 flex-1">Báo cáo lợi nhuận</h2>
+        <a href="{{ route('owner.reports.peak-hours') }}" class="text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition shrink-0">
+            <i class="fa-solid fa-fire mr-1"></i>Giờ cao điểm
+        </a>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
