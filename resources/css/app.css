@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* Ẩn phần tử x-cloak trước khi Alpine.js kịp khởi tạo — tránh chớp hiện dropdown/modal
+   trong 1 nhịp ngay lúc trang vừa tải xong, dùng chung cho MỌI nơi có x-cloak. */
+[x-cloak] { display: none !important; }
+
+/* Ẩn thanh cuộn (scrollbar) về mặt HÌNH ẢNH nhưng vẫn cuộn được bình thường
+   bằng chuột/trackpad/vuốt tay — dùng cho các modal/drawer cao (VD: khi bật
+   cỡ chữ Lớn ở Cài đặt khiến nội dung modal cao hơn màn hình). CHỈ áp dụng
+   cho modal/drawer, KHÔNG áp dụng cho vùng cuộn nội dung chính của trang —
+   ở đó thanh cuộn hiện ra là tín hiệu hữu ích trên desktop (dùng chuột kéo
+   được), ẩn đi sẽ phản tác dụng. */
+.scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge cũ */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, các trình duyệt nền WebKit/Blink */
+}
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/*
+ * Cỡ chữ tuỳ chỉnh (Cài đặt giao diện): nhân thêm hệ số vào font-size gốc đã
+ * scale theo breakpoint ở trên — dùng biến số thay vì viết lại từng breakpoint.
+ */
+:root {
+    --font-multiplier: 1;
+}
+html[data-font-scale='sm'] {
+    --font-multiplier: 0.9;
+}
+html[data-font-scale='lg'] {
+    --font-multiplier: 1.15;
+}
+html {
+    font-size: calc(16px * var(--font-multiplier));
+}
+@media (min-width: 768px) {
+    html {
+        font-size: calc(17px * var(--font-multiplier));
+    }
+}
+@media (min-width: 1024px) {
+    html {
+        font-size: calc(18px * var(--font-multiplier));
+    }
+}
+@media (min-width: 1536px) {
+    html {
+        font-size: calc(19px * var(--font-multiplier));
+    }
+}
+
+/*
+ * Màu chủ đạo tuỳ chỉnh (Cài đặt giao diện): các file Blade dùng
+ * bg-[var(--accent)], text-[var(--accent-text)]... thay vì hardcode
+ * bg-amber-600 — đổi giá trị biến theo data-accent là đổi màu toàn app.
+ * Giá trị lấy đúng từ bảng màu Tailwind (khớp mã hex thật của amber-600 v.v.)
+ */
+html,
+html[data-accent='amber'] {
+    --accent: #d97706;      /* amber-600 */
+    --accent-hover: #b45309; /* amber-700 */
+    --accent-text: #b45309;  /* amber-700 */
+    --accent-light: #fef3c7; /* amber-100 */
+    --accent-ring: #f59e0b;  /* amber-500 */
+}
+html[data-accent='orange'] {
+    --accent: #ea580c;
+    --accent-hover: #c2410c;
+    --accent-text: #c2410c;
+    --accent-light: #ffedd5;
+    --accent-ring: #f97316;
+}
+html[data-accent='blue'] {
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-text: #1d4ed8;
+    --accent-light: #dbeafe;
+    --accent-ring: #3b82f6;
+}
+html[data-accent='emerald'] {
+    --accent: #059669;
+    --accent-hover: #047857;
+    --accent-text: #047857;
+    --accent-light: #d1fae5;
+    --accent-ring: #10b981;
+}
+html[data-accent='rose'] {
+    --accent: #e11d48;
+    --accent-hover: #be123c;
+    --accent-text: #be123c;
+    --accent-light: #ffe4e6;
+    --accent-ring: #f43f5e;
+}
+html[data-accent='violet'] {
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --accent-text: #6d28d9;
+    --accent-light: #ede9fe;
+    --accent-ring: #8b5cf6;
+}
