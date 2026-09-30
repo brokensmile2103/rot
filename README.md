@@ -1,4 +1,4 @@
-# ☕ Rót v1.2.0 — Phần mềm quản lý xe/quầy cà phê
+# ☕ Rót v1.3.0 — Phần mềm quản lý xe/quầy cà phê
 
 **Bán hàng · Kho nguyên liệu · Ca làm việc · Báo cáo lợi nhuận · Sổ doanh thu — trong 1 màn hình duy nhất**
 
