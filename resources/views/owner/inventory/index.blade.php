@@ -13,20 +13,17 @@
             <i class="fa-solid fa-boxes-stacked"></i>
         </div>
         <h2 class="text-lg font-bold text-neutral-900 flex-1 min-w-0">{{ $terms['ingredient_label'] }} — {{ $location->name }}</h2>
-        <a href="{{ route('owner.inventory.adjustments') }}" class="hidden sm:inline-block text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition shrink-0">
-            <i class="fa-solid fa-clipboard-list mr-1"></i>Nhật ký điều chỉnh
-        </a>
     </div>
 
     <div class="grid grid-cols-3 gap-2 mb-5">
-        <a href="{{ route('owner.inventory.reorder') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
-            <i class="fa-solid fa-cart-flatbed block text-base text-[var(--accent-text)] mb-1"></i>Gợi ý nhập hàng
+        <a href="{{ route('owner.inventory.reorder') }}" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-cart-flatbed text-base text-[var(--accent-text)] shrink-0"></i>Gợi ý nhập hàng
         </a>
-        <a href="{{ route('owner.inventory.stocktake') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
-            <i class="fa-solid fa-list-check block text-base text-[var(--accent-text)] mb-1"></i>Kiểm kê kho
+        <a href="{{ route('owner.inventory.stocktake') }}" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-list-check text-base text-[var(--accent-text)] shrink-0"></i>Kiểm kê kho
         </a>
-        <a href="{{ route('owner.inventory.adjustments') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
-            <i class="fa-solid fa-clipboard-list block text-base text-[var(--accent-text)] mb-1"></i>Nhật ký điều chỉnh
+        <a href="{{ route('owner.inventory.adjustments') }}" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-clipboard-list text-base text-[var(--accent-text)] shrink-0"></i>Nhật ký điều chỉnh
         </a>
     </div>
 
