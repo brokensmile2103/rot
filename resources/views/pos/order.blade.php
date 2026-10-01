@@ -5,7 +5,7 @@
 @section('title', 'Order · Rót')
 @section('page-title', 'Bán hàng')
 @section('content')
-<div x-data="posApp(@js($categories), @js($initialCart ?? []), @js($editingOrder?->id), @js($location->receipt_enabled), @js($location->hasBankAccount() ? ['bin' => $location->bank_bin, 'accountNo' => $location->bank_account_no, 'accountName' => $location->bank_account_name] : null), @js($editingOrder?->isDraft() ?? false), @js($location->loyalty_enabled), @js((float) $location->points_redeem_value), @js($editingOrder?->customer), @js(($acceptedRequest ?? null)?->customer_phone))" class="h-full flex flex-col">
+<div x-data="posApp(@js($categories), @js($initialCart ?? []), @js($editingOrder?->id), @js($location->receipt_enabled), @js($location->hasBankAccount() ? ['bin' => $location->bank_bin, 'accountNo' => $location->bank_account_no, 'accountName' => $location->bank_account_name] : null), @js($editingOrder?->isDraft() ?? false), @js($location->loyalty_enabled), @js((float) $location->points_redeem_value), @js($editingOrder?->customer), @js(($acceptedRequest ?? null)?->customer_phone), @js((object) ($sellable ?? [])), @js(\App\Services\StockForecast::LOW_SELLABLE_THRESHOLD), @js($editingOrder && ! $editingOrder->isDraft() ? ['order_type' => $editingOrder->order_type, 'guest_count' => $editingOrder->guest_count, 'payment_method' => $editingOrder->payment_method, 'cash_portion' => $editingOrder->cash_portion ? (float) $editingOrder->cash_portion : null, 'discount_type' => $editingOrder->discount_type, 'discount_value' => $editingOrder->discount_value ? (float) $editingOrder->discount_value : null, 'redeem_points' => (int) $editingOrder->points_redeemed, 'points_earned' => (int) $editingOrder->points_earned] : null))" class="h-full flex flex-col">
 
     @isset($editingOrder)
         <div class="shrink-0 bg-neutral-900 text-white text-sm text-center py-2 flex items-center justify-center gap-3">
@@ -112,6 +112,14 @@
                                 <template x-if="product.variants.length <= 1">
                                     <div class="text-[var(--accent-text)] text-sm mt-1.5 font-bold" x-text="formatPrice(product.variants[0]?.price ?? 0) + 'đ'"></div>
                                 </template>
+                                {{-- Cảnh báo tồn kho theo công thức (chỉ cảnh báo, vẫn cho bán — số sổ sách có thể lệch thực tế). --}}
+                                <template x-if="stockBadge(product)">
+                                    <div class="mt-2 inline-flex items-center gap-1 text-[0.7rem] font-bold px-2 py-0.5 rounded-full"
+                                         :class="stockBadge(product).out ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
+                                        <i class="fa-solid" :class="stockBadge(product).out ? 'fa-circle-exclamation' : 'fa-hourglass-half'"></i>
+                                        <span x-text="stockBadge(product).label"></span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </template>
@@ -142,6 +150,9 @@
             <template x-for="(line, idx) in cart" :key="idx">
                 <div class="py-3.5 border-b border-neutral-200">
                     <div class="text-neutral-900 font-semibold text-[15px] mb-2 truncate" x-text="lineInfo(line).product.name"></div>
+                    <template x-if="lineStockWarning(line)">
+                        <p class="text-xs font-semibold text-red-600 -mt-1 mb-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span x-text="lineStockWarning(line)"></span></p>
+                    </template>
 
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -315,6 +326,9 @@
             <template x-for="(line, idx) in cart" :key="idx">
                 <div class="py-3.5 border-b border-neutral-200">
                     <div class="text-neutral-900 font-semibold text-[15px] mb-2 truncate" x-text="lineInfo(line).product.name"></div>
+                    <template x-if="lineStockWarning(line)">
+                        <p class="text-xs font-semibold text-red-600 -mt-1 mb-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span x-text="lineStockWarning(line)"></span></p>
+                    </template>
 
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -427,7 +441,7 @@
 
             <div class="mb-4">
                 <div class="text-xs text-neutral-500 mb-2 font-bold uppercase tracking-wide">Hình thức thanh toán</div>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <button @click="paymentMethod = 'tien_mat'" :class="paymentMethod === 'tien_mat' ? 'bg-[var(--accent)] text-white' : 'bg-neutral-100 text-neutral-700 border border-neutral-200'" class="py-3 rounded-xl text-sm font-medium flex flex-col items-center gap-1 transition">
                         <i class="fa-solid fa-money-bill-wave"></i>Tiền mặt
                     </button>
@@ -437,8 +451,39 @@
                     <button @click="paymentMethod = 'vi_dien_tu'" :class="paymentMethod === 'vi_dien_tu' ? 'bg-[var(--accent)] text-white' : 'bg-neutral-100 text-neutral-700 border border-neutral-200'" class="py-3 rounded-xl text-sm font-medium flex flex-col items-center gap-1 transition">
                         <i class="fa-solid fa-wallet"></i>Ví điện tử
                     </button>
+                    <button @click="paymentMethod = 'ket_hop'" :class="paymentMethod === 'ket_hop' ? 'bg-[var(--accent)] text-white' : 'bg-neutral-100 text-neutral-700 border border-neutral-200'" class="py-3 rounded-xl text-sm font-medium flex flex-col items-center gap-1 transition">
+                        <i class="fa-solid fa-scale-balanced"></i>Kết hợp
+                    </button>
                 </div>
             </div>
+
+            {{-- Thanh toán KẾT HỢP: khách đưa 1 phần tiền mặt, phần còn lại chuyển khoản (QR tự điền đúng phần còn lại). --}}
+            <template x-if="paymentMethod === 'ket_hop'">
+                <div class="mb-4">
+                    <div class="text-xs text-neutral-500 mb-2 font-bold uppercase tracking-wide">Phần khách trả tiền mặt</div>
+                    <input type="text" inputmode="numeric" id="cash-portion-input" name="cash_portion_display" autocomplete="off"
+                           :value="cashPortion ? Number(cashPortion).toLocaleString('vi-VN') : ''"
+                           @input="cashPortion = $event.target.value.replace(/\D/g, '') ? Number($event.target.value.replace(/\D/g, '')) : null"
+                           class="w-full text-2xl font-bold text-center rounded-xl bg-neutral-100 border border-neutral-300 text-neutral-900 py-3 focus:border-[var(--accent-ring)] focus:outline-none">
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <template x-for="note in [10000, 20000, 50000, 100000, 200000]" :key="note">
+                            <button @click="cashPortion = note" type="button"
+                                    class="text-xs font-bold px-3 py-1.5 rounded-lg bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition"
+                                    x-text="formatPrice(note) + 'đ'"></button>
+                        </template>
+                    </div>
+                    <div class="text-center mt-3">
+                        <div class="text-xs text-neutral-500 font-medium">Còn lại chuyển khoản</div>
+                        <div class="text-3xl font-bold text-blue-600" x-text="formatPrice(transferPortion()) + 'đ'"></div>
+                        <p class="text-xs text-neutral-400 mt-1" x-show="cashPortion && cashPortion >= finalTotal()">Tiền mặt đã đủ cả đơn — sẽ ghi nhận là thanh toán tiền mặt.</p>
+                    </div>
+                    <template x-if="bankInfo && transferPortion() > 0">
+                        <div class="flex flex-col items-center bg-neutral-50 rounded-xl py-4 border border-neutral-200 mt-3">
+                            <img :src="qrCodeUrl()" alt="Mã QR chuyển khoản phần còn lại" class="w-44 h-44 object-contain rounded-lg bg-white p-2 border border-neutral-200">
+                        </div>
+                    </template>
+                </div>
+            </template>
 
             <template x-if="paymentMethod === 'tien_mat'">
                 <div class="mb-4">
@@ -579,9 +624,11 @@
 </div>
 
 <script>
-function posApp(categoriesData, initialCartData = [], editingOrderId = null, receiptEnabled = true, bankInfo = null, isDraft = false, loyaltyEnabled = false, pointsRedeemValue = 1000, existingCustomer = null, prefillCustomerPhone = null) {
+function posApp(categoriesData, initialCartData = [], editingOrderId = null, receiptEnabled = true, bankInfo = null, isDraft = false, loyaltyEnabled = false, pointsRedeemValue = 1000, existingCustomer = null, prefillCustomerPhone = null, sellableData = {}, lowSellableThreshold = 5, editingCheckout = null) {
     return {
         categories: categoriesData,
+        sellable: sellableData,
+        lowSellableThreshold: lowSellableThreshold,
         activeCategory: categoriesData[0]?.id ?? null,
         cart: [],
         editingOrderId: editingOrderId,
@@ -608,6 +655,7 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
         guestCount: 1,
         paymentMethod: 'tien_mat',
         cashReceived: null,
+        cashPortion: null,
         discountOpen: false,
         discountType: null,
         discountValue: null,
@@ -641,6 +689,24 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
                         discount_value: line.discount_value ?? null,
                     };
                 });
+            }
+
+            // SỬA đơn đã hoàn thành: nạp lại đúng loại đơn, hình thức thanh toán, giảm giá cả
+            // đơn và điểm đã dùng — trước đây form luôn về mặc định (Tiền mặt, không giảm giá),
+            // bấm Hoàn tất mà không để ý là đổi sai hình thức thanh toán và mất giảm giá.
+            if (editingCheckout) {
+                this.orderType = editingCheckout.order_type ?? 'mang_di';
+                this.guestCount = editingCheckout.guest_count ?? 1;
+                this.paymentMethod = editingCheckout.payment_method ?? 'tien_mat';
+                this.cashPortion = editingCheckout.cash_portion;
+                this.discountType = editingCheckout.discount_type;
+                this.discountValue = editingCheckout.discount_value;
+                this.discountOpen = !!editingCheckout.discount_type;
+                this.redeemPoints = editingCheckout.redeem_points || 0;
+                // Server hoàn điểm của đơn cũ trước khi tính lại → điểm khả dụng = hiện có − đã cộng + đã dùng.
+                if (existingCustomer) {
+                    this.customerPoints = Math.max(0, this.customerPoints - (editingCheckout.points_earned || 0) + this.redeemPoints);
+                }
             }
 
             // Khách đã điền SĐT lúc gửi yêu cầu qua QR — tra cứu NGAY (không
@@ -682,6 +748,51 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
             return new Intl.NumberFormat('vi-VN').format(Math.round(v || 0));
         },
 
+        /** Phần chuyển khoản của đơn thanh toán kết hợp (xem trước — server luôn tính lại). */
+        transferPortion() {
+            return Math.max(0, this.finalTotal() - (this.cashPortion || 0));
+        },
+
+        /** Số phần còn bán được của 1 size theo tồn kho (null = size chưa có công thức, không theo dõi). */
+        sellableOf(variantId) {
+            const v = this.sellable[variantId];
+            return v === undefined ? null : v;
+        },
+
+        /**
+         * Nhãn cảnh báo trên thẻ món: "Hết nguyên liệu" khi MỌI size đang theo dõi đều hết,
+         * "Còn N" khi size ít nhất còn ≤ ngưỡng. Size chưa có công thức thì không theo dõi.
+         */
+        stockBadge(product) {
+            const counts = product.variants.map(v => this.sellableOf(v.id)).filter(c => c !== null);
+            if (counts.length === 0) return null;
+            const best = Math.max(...counts);
+            const worst = Math.min(...counts);
+            if (best <= 0 && counts.length === product.variants.length) return { out: true, label: 'Hết nguyên liệu' };
+            if (worst <= this.lowSellableThreshold) {
+                return { out: false, label: counts.length > 1 && worst !== best ? 'Sắp hết (còn ' + worst + '–' + best + ')' : 'Còn ' + worst };
+            }
+            return null;
+        },
+
+        /** Cảnh báo khi số lượng trong giỏ (cộng các dòng cùng size) vượt quá tồn kho theo công thức. */
+        lineStockWarning(line) {
+            const available = this.sellableOf(line.variant_id);
+            if (available === null) return null;
+            const inCart = this.cart.filter(l => l.variant_id === line.variant_id).reduce((s, l) => s + l.quantity, 0);
+            if (inCart <= available) return null;
+            return available <= 0 ? 'Kho đã hết nguyên liệu cho món này' : 'Kho chỉ còn đủ ' + available + ' phần';
+        },
+
+        /** Trừ tạm số còn bán được ngay sau khi bán, để cảnh báo đúng mà không cần tải lại trang. */
+        consumeSellable(lines) {
+            for (const l of lines) {
+                if (this.sellable[l.variant_id] !== undefined) {
+                    this.sellable[l.variant_id] = Math.max(0, this.sellable[l.variant_id] - l.quantity);
+                }
+            }
+        },
+
         /**
          * Sinh URL ảnh QR VietQR theo ĐÚNG số tiền hiện tại của giỏ hàng —
          * dùng dịch vụ Quick Link công khai của img.vietqr.io, không cần API
@@ -690,7 +801,7 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
         qrCodeUrl() {
             if (!this.bankInfo) return null;
             const params = new URLSearchParams({
-                amount: Math.round(this.finalTotal()),
+                amount: Math.round(this.paymentMethod === 'ket_hop' ? this.transferPortion() : this.finalTotal()),
                 addInfo: 'Thanh toan don hang',
                 accountName: this.bankInfo.accountName || '',
             });
@@ -803,7 +914,9 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
                 if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
                 const total = (parseFloat(variant.price) + modifiers.reduce((s, m) => s + parseFloat(m.extra_price), 0)) * quantity;
                 const qtyLabel = quantity > 1 ? ` x${quantity}` : '';
-                this.showToast(`Đã bán ${product.name}${qtyLabel} — ${this.formatPrice(total)}đ`);
+                const numberLabel = result.daily_number ? `Số ${result.daily_number} · ` : '';
+                this.showToast(`${numberLabel}Đã bán ${product.name}${qtyLabel} — ${this.formatPrice(total)}đ`);
+                this.consumeSellable([{ variant_id: variant.id, quantity }]);
                 // Cập nhật NGAY badge "Đơn hàng" trên menu — request này đi qua
                 // fetch(), không có điều hướng trang nào để server tính lại
                 // (xem view composer trong AppServiceProvider).
@@ -1134,6 +1247,7 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
                         order_type: this.orderType,
                         guest_count: this.orderType === 'ngoi_lai' ? this.guestCount : null,
                         payment_method: this.paymentMethod,
+                        cash_portion: this.paymentMethod === 'ket_hop' ? (this.cashPortion || 0) : null,
                         cash_received: this.cashReceived,
                         discount_type: this.discountType,
                         discount_value: this.discountValue,
@@ -1158,27 +1272,31 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
                     return;
                 }
 
+                const result = await res.json();
+
                 if (isEditing) {
                     window.location.href = '{{ route('pos.orders.index') }}';
                     return;
                 }
 
                 // Điền URL hoá đơn thật vào tab đã mở sẵn từ trước.
-                const result = await res.json();
                 if (result.order_id && receiptWindow) {
                     receiptWindow.location.href = `/don-hang/${result.order_id}/in`;
                 }
 
                 const orderTotal = this.finalTotal();
                 const itemCount = this.cartCount;
+                this.consumeSellable(this.cart);
 
                 this.cart = [];
                 this.checkoutOpen = false;
                 this.cashReceived = null;
+                this.cashPortion = null;
                 this.guestCount = 1;
                 this.acceptedBannerVisible = false;
                 if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
-                this.showToast(`Đã tạo đơn ${itemCount} món — ${this.formatPrice(orderTotal)}đ`);
+                const numberLabel = result.daily_number ? `Số ${result.daily_number} · ` : '';
+                this.showToast(`${numberLabel}Đã tạo đơn ${itemCount} món — ${this.formatPrice(orderTotal)}đ`);
                 // Cập nhật NGAY badge "Đơn hàng" trên menu, cùng lý do như ở
                 // submitQuickOrder() — đơn mới vừa tạo (isEditing đã return ở
                 // nhánh trên, tới đây chắc chắn là đơn MỚI, không phải sửa).

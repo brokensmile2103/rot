@@ -1,4 +1,4 @@
-# ☕ Rót v1.3.0 — Phần mềm quản lý xe/quầy cà phê
+# ☕ Rót v1.4.0 — Phần mềm quản lý xe/quầy cà phê
 
 **Bán hàng · Kho nguyên liệu · Ca làm việc · Báo cáo lợi nhuận · Sổ doanh thu — trong 1 màn hình duy nhất**
 
@@ -29,9 +29,12 @@ Nếu bạn không rành kỹ thuật, không muốn tự thuê VPS, tự cấu 
 
 ## ✨ Tính năng nổi bật
 
-- **Bán hàng 1 màn hình** — giỏ hàng, size/topping tuỳ chọn, giữ đơn nháp cho khách đang chờ, "Lên đơn nhanh" cho món quen thuộc chỉ 1 chạm.
+- **Bán hàng 1 màn hình** — giỏ hàng, size/topping tuỳ chọn, giữ đơn nháp cho khách đang chờ, "Lên đơn nhanh" cho món quen thuộc chỉ 1 chạm. Thẻ món tự cảnh báo **"Còn N" / "Hết nguyên liệu"** theo tồn kho thật.
+- **Số thứ tự & hàng chờ pha chế** — mỗi đơn có số thứ tự trong ngày in trên hoá đơn; màn "Pha chế" xếp đơn theo thứ tự, bấm "Xong" để gọi số khách.
+- **Thanh toán kết hợp** — tiền mặt + chuyển khoản trong cùng 1 đơn, mã VietQR tự điền đúng phần còn lại, chốt ca tách đúng từng phần.
 - **Kho nguyên liệu & giá vốn tự động** — giá vốn mỗi món tính theo đúng công thức pha chế, cập nhật tự động theo phương pháp **bình quân gia quyền** mỗi lần nhập kho — không cần tự nhớ giá nhập gần nhất. Mọi lần sửa tay tồn kho/giá vốn đều được ghi vào **nhật ký điều chỉnh kho** (số trước/sau, lý do, người sửa, thời điểm) kèm tổng giá trị thiếu hụt/dư ước tính.
-- **Chốt ca minh bạch** — tự tính tiền mặt lý thuyết trong ca, đối chiếu với tiền đếm thực tế, báo ngay khớp/dư/thiếu quỹ; sổ quỹ ghi lại đầy đủ mọi khoản chi/nạp/rút.
+- **Gợi ý nhập hàng & kiểm kê** — biết mỗi nguyên liệu còn đủ dùng mấy ngày, nên nhập bao nhiêu cho 3/7/14/30 ngày tới và hết bao nhiêu tiền; kiểm kê cả kho trên 1 màn hình, chênh lệch tự vào nhật ký.
+- **Chốt ca minh bạch** — tự tính tiền mặt lý thuyết trong ca, đối chiếu với tiền đếm thực tế (có bộ đếm theo mệnh giá), báo ngay khớp/dư/thiếu quỹ; tổng kết theo tiền mặt/chuyển khoản/ví để đối chiếu sao kê; sổ quỹ ghi lại đầy đủ mọi khoản chi/nạp/rút.
 - **Báo cáo lợi nhuận thực** — doanh thu là **số tiền thực nhận** (đã trừ giảm giá món, giảm giá cả đơn và điểm đổi, khớp đúng số Chốt ca), trừ giá vốn, lương nhân viên và chi phí mặt bằng để ra lợi nhuận thực tế.
 - **Giờ cao điểm** — bảng nhiệt giờ × thứ trong tuần (xem 4/8/13 tuần, theo số đơn hoặc doanh thu) cho biết khung giờ, ngày nào đông khách nhất để xếp ca và chuẩn bị nguyên liệu.
 - **Sổ doanh thu & ngưỡng thuế** — tự lập Sổ doanh thu bán hàng hóa, dịch vụ (mẫu S1a-HKD) cho hộ kinh doanh, in/lưu PDF hoặc tải CSV; nhập thêm doanh thu bán ngoài Rót; theo dõi doanh thu năm (cộng dồn mọi xe) so với ngưỡng miễn thuế kèm dự báo ngày chạm ngưỡng. Xem [chi tiết bên dưới](#-sổ-doanh-thu--ngưỡng-thuế).
@@ -158,6 +161,15 @@ Xem [CHANGELOG.md](CHANGELOG.md) để biết mỗi phiên bản có thay đổi
 | Tuỳ biến mã nguồn | Toàn quyền sửa code | Không sửa được code |
 | Quản lý nhiều xe/chi nhánh | Tự cấu hình từng nơi | Gộp báo cáo trong 1 tài khoản |
 | Phù hợp với | Người rành kỹ thuật, muốn tự kiểm soát hạ tầng | Đa số quán muốn bán hàng ngay, ít lo vận hành |
+
+## Chạy kiểm thử (dành cho lập trình viên)
+
+```bash
+php artisan test                  # unit test, chạy với SQLite có sẵn
+DB_CONNECTION=mysql DB_DATABASE=rot_test DB_USERNAME=... DB_PASSWORD=... php artisan test
+```
+
+Bộ test luồng bán hàng (`tests/Feature/PosFlowTest.php`) cần MySQL/MariaDB vì migration dùng câu lệnh riêng của MySQL — dùng 1 database **trống, riêng cho test** (dữ liệu bị xoá sạch mỗi lần chạy). Không có MySQL thì các test này tự bỏ qua.
 
 ## Về Font Awesome
 

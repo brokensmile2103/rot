@@ -16,6 +16,7 @@ use App\Http\Controllers\Owner\TaxBookController;
 use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\Pos\CashBookController;
 use App\Http\Controllers\Pos\OrderController;
+use App\Http\Controllers\Pos\PrepQueueController;
 use App\Http\Controllers\Pos\ShiftController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/ca/lich-su', [ShiftController::class, 'history'])->name('shift.history');
     Route::get('/ca/lich-su/{shift}', [ShiftController::class, 'historyShow'])->name('shift.history.show');
 
+    // Hàng chờ pha chế — danh sách tự cập nhật ~8 giây/lần (giới hạn 60 lần/phút như polling QR).
+    Route::get('/pha-che', [PrepQueueController::class, 'index'])->name('pos.prep.index');
+    Route::get('/pha-che/du-lieu', [PrepQueueController::class, 'data'])->middleware('throttle:60,1')->name('pos.prep.data');
+    Route::post('/pha-che/{order}/xong', [PrepQueueController::class, 'markDone'])->name('pos.prep.done');
+    Route::post('/pha-che/{order}/hoan-tac', [PrepQueueController::class, 'undo'])->name('pos.prep.undo');
+
     Route::get('/so-quy', [CashBookController::class, 'index'])->name('cashbook.index');
     Route::post('/so-quy', [CashBookController::class, 'store'])->name('cashbook.store');
 
@@ -120,6 +127,9 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
 
     Route::get('/kho', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/kho/nhat-ky-dieu-chinh', [InventoryController::class, 'adjustments'])->name('inventory.adjustments');
+    Route::get('/kho/kiem-ke', [InventoryController::class, 'stocktake'])->name('inventory.stocktake');
+    Route::post('/kho/kiem-ke', [InventoryController::class, 'storeStocktake'])->name('inventory.stocktake.store');
+    Route::get('/kho/goi-y-nhap-hang', [InventoryController::class, 'reorder'])->name('inventory.reorder');
     Route::get('/kho/{ingredient}/lich-su-nhap', [InventoryController::class, 'stockInHistory'])->name('inventory.stock-in.history');
     Route::get('/kho/{ingredient}/lich-su-dieu-chinh', [InventoryController::class, 'adjustmentHistory'])->name('inventory.adjustments.history');
     Route::post('/kho', [InventoryController::class, 'storeIngredient'])->name('inventory.store');
@@ -148,6 +158,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
     Route::put('/cai-dat/chi-phi', [SettingsController::class, 'updateCosts'])->name('settings.costs');
     Route::put('/cai-dat/hoa-don-dien-tu', [SettingsController::class, 'updateEinvoice'])->name('settings.einvoice');
     Route::put('/cai-dat/dat-mon-qr', [SettingsController::class, 'updateQrOrdering'])->name('settings.qr-ordering');
+    Route::put('/cai-dat/pha-che', [SettingsController::class, 'updatePrepQueue'])->name('settings.prep-queue');
     Route::post('/cai-dat/dat-mon-qr/doi-ma', [SettingsController::class, 'regenerateQrToken'])->name('settings.qr-ordering.regenerate');
     Route::get('/cai-dat/xuat-du-lieu', [DataExportController::class, 'export'])->name('settings.data-export');
     Route::post('/cai-dat/thiet-lap-nhanh', [QuickSetupController::class, 'store'])->name('settings.quick-setup');

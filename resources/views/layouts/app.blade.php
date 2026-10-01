@@ -105,6 +105,13 @@
                       {{ request()->routeIs('shift.history*') ? 'bg-[var(--accent)] text-white' : 'text-neutral-600 hover:bg-neutral-100' }}">
                 <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i>Lịch sử ca
             </a>
+            @if($currentLocationForTheme?->prep_queue_enabled)
+                <a href="{{ route('pos.prep.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition
+                          {{ request()->routeIs('pos.prep.*') ? 'bg-[var(--accent)] text-white' : 'text-neutral-600 hover:bg-neutral-100' }}">
+                    <i class="fa-solid fa-list-check w-5 text-center"></i>Pha chế
+                </a>
+            @endif
 
             @if(auth()->user()?->isOwner())
                 <div class="pt-3 mt-3 border-t border-neutral-200 space-y-1">
@@ -210,6 +217,11 @@
                     <a href="{{ route('shift.history') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 transition">
                         <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i>Lịch sử ca
                     </a>
+                    @if($currentLocationForTheme?->prep_queue_enabled)
+                        <a href="{{ route('pos.prep.index') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 transition">
+                            <i class="fa-solid fa-list-check w-4 text-center"></i>Pha chế
+                        </a>
+                    @endif
 
                     @if(auth()->user()?->isOwner())
                         <p class="px-4 pt-3 pb-1 text-xs font-bold text-neutral-400 uppercase tracking-wider">Quản lý</p>

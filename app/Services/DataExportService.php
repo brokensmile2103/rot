@@ -335,19 +335,19 @@ class DataExportService
         $orders = $location->orders()->with(['customer', 'creator'])->orderBy('id')->get();
 
         $typeLabels = ['mang_di' => 'Mang đi', 'ngoi_lai' => 'Ngồi lại'];
-        $statusLabels = ['dang_pha_che' => 'Đang pha chế', 'hoan_thanh' => 'Hoàn thành', 'da_huy' => 'Đã huỷ'];
-        $paymentLabels = ['tien_mat' => 'Tiền mặt', 'chuyen_khoan' => 'Chuyển khoản', 'vi_dien_tu' => 'Ví điện tử'];
+        $statusLabels = ['nhap' => 'Nháp', 'dang_pha_che' => 'Đang pha chế', 'hoan_thanh' => 'Hoàn thành', 'da_huy' => 'Đã huỷ'];
+        $paymentLabels = \App\Models\Order::PAYMENT_LABELS;
 
         return [
             'header' => [
-                'ID', 'Loại đơn', 'Khách hàng', 'Trạng thái', 'Phương thức thanh toán',
-                'Tạm tính (đ)', 'Giảm giá (đ)', 'Tổng tiền (đ)', 'Điểm tích được', 'Điểm đã dùng',
+                'ID', 'Số thứ tự trong ngày', 'Loại đơn', 'Khách hàng', 'Trạng thái', 'Phương thức thanh toán',
+                'Phần tiền mặt (đ)', 'Tạm tính (đ)', 'Giảm giá (đ)', 'Tổng tiền (đ)', 'Điểm tích được', 'Điểm đã dùng',
                 'Người tạo', 'Hoàn thành lúc', 'Tạo lúc',
             ],
             'rows' => $orders->map(fn ($o) => [
-                $o->id, $typeLabels[$o->order_type] ?? $o->order_type, $o->customer->name ?? '',
+                $o->id, $o->daily_number, $typeLabels[$o->order_type] ?? $o->order_type, $o->customer->name ?? '',
                 $statusLabels[$o->status] ?? $o->status, $paymentLabels[$o->payment_method] ?? $o->payment_method,
-                round((float) $o->subtotal), round((float) $o->discount_amount), round((float) $o->total),
+                $o->status === 'hoan_thanh' ? round($o->cashAmount()) : '', round((float) $o->subtotal), round((float) $o->discount_amount), round((float) $o->total),
                 $o->points_earned, $o->points_redeemed, $o->creator->name ?? '',
                 optional($o->completed_at)->format('d/m/Y H:i'), optional($o->created_at)->format('d/m/Y H:i'),
             ])->all(),

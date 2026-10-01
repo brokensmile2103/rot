@@ -13,8 +13,20 @@
             <i class="fa-solid fa-boxes-stacked"></i>
         </div>
         <h2 class="text-lg font-bold text-neutral-900 flex-1 min-w-0">{{ $terms['ingredient_label'] }} — {{ $location->name }}</h2>
-        <a href="{{ route('owner.inventory.adjustments') }}" class="text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition shrink-0">
+        <a href="{{ route('owner.inventory.adjustments') }}" class="hidden sm:inline-block text-xs px-3 py-2 rounded-lg bg-white border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium transition shrink-0">
             <i class="fa-solid fa-clipboard-list mr-1"></i>Nhật ký điều chỉnh
+        </a>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 mb-5">
+        <a href="{{ route('owner.inventory.reorder') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-cart-flatbed block text-base text-[var(--accent-text)] mb-1"></i>Gợi ý nhập hàng
+        </a>
+        <a href="{{ route('owner.inventory.stocktake') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-list-check block text-base text-[var(--accent-text)] mb-1"></i>Kiểm kê kho
+        </a>
+        <a href="{{ route('owner.inventory.adjustments') }}" class="text-xs px-3 py-2.5 rounded-xl bg-white border border-neutral-200 shadow-sm text-neutral-700 hover:bg-neutral-50 font-semibold transition text-center">
+            <i class="fa-solid fa-clipboard-list block text-base text-[var(--accent-text)] mb-1"></i>Nhật ký điều chỉnh
         </a>
     </div>
 
@@ -86,6 +98,14 @@
                         <div class="text-neutral-500 text-xs mt-0.5">
                             Tồn: <strong class="text-neutral-700">{{ quantity($ing->current_stock) }} {{ $ing->unit }}</strong>
                             · Giá vốn TB: <strong class="text-neutral-700">{{ money($ing->avg_cost_per_unit, 0) }}đ/{{ $ing->unit }}</strong>
+                            @php $usage = $dailyUsage[$ing->id] ?? 0; @endphp
+                            @if($usage > 0)
+                                @php $daysLeft = max(0, (float) $ing->current_stock) / $usage; @endphp
+                                · <span class="{{ $daysLeft < 2 ? 'text-red-600 font-semibold' : ($daysLeft < 5 ? 'text-amber-600 font-semibold' : '') }}"
+                                        title="Dùng TB {{ quantity($usage) }} {{ $ing->unit }}/ngày (14 ngày gần nhất)">
+                                    đủ dùng ~{{ $daysLeft >= 100 ? '99+' : number_format($daysLeft, $daysLeft < 10 ? 1 : 0, ',', '.') }} ngày
+                                </span>
+                            @endif
                         </div>
                     </div>
 

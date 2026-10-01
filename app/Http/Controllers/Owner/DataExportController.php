@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ResolvesCurrentLocation;
 use App\Services\DataExportService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Str;
 
 /**
@@ -18,7 +18,7 @@ class DataExportController extends Controller
 {
     use ResolvesCurrentLocation;
 
-    public function export(Request $request, DataExportService $exporter): Response
+    public function export(Request $request, DataExportService $exporter): BinaryFileResponse
     {
         $location = $this->currentLocation($request);
 
@@ -26,6 +26,8 @@ class DataExportController extends Controller
 
         $filename = Str::slug($location->name.'-du-lieu-'.now()->format('Y-m-d')).'.zip';
 
+        // response()->download() trả BinaryFileResponse — khai báo kiểu Response như trước đây
+        // làm PHP ném TypeError, nút "Xuất dữ liệu" luôn báo lỗi 500.
         return response()->download($zipPath, $filename)->deleteFileAfterSend(true);
     }
 }

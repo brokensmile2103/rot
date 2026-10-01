@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\ResolvesCurrentLocation;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\User;
 use App\Services\OrderRevenue;
 use App\Services\PeakHoursCalculator;
 use DateTimeImmutable;
@@ -80,6 +81,7 @@ class ReportController extends Controller
         $menuEngineering = $this->classifyMenuItems($current['rows']);
         $forecast = $this->buildForecast($location, $period);
         $operatingCosts = $this->operatingCosts($location, $period, $start, $end);
+        $breakdown = $this->salesBreakdown($location, $start, $end);
 
         return view('owner.reports.index', [
             'location' => $location,
@@ -101,7 +103,45 @@ class ReportController extends Controller
             'laborCost' => $operatingCosts['labor'],
             'rentCost' => $operatingCosts['rent'],
             'netProfit' => $current['profit'] - $operatingCosts['labor'] - $operatingCosts['rent'],
+            'breakdown' => $breakdown,
         ]);
+    }
+
+    /**
+     * Số đơn, giá trị TB/đơn, doanh thu theo HÌNH THỨC THANH TOÁN (đơn kết hợp tách đúng
+     * phần tiền mặt/chuyển khoản) và theo NHÂN VIÊN tạo đơn — cùng định nghĩa doanh thu
+     * (Order::total của đơn hoàn thành) với summarize() nên tổng luôn khớp.
+     */
+    private function salesBreakdown(Location $location, Carbon $start, Carbon $end): array
+    {
+        $orders = Order::query()
+            ->where('location_id', $location->id)
+            ->where('status', 'hoan_thanh')
+            ->whereBetween('completed_at', [$start, $end])
+            ->get(['id', 'payment_method', 'total', 'cash_portion', 'created_by']);
+
+        $count = $orders->count();
+        $revenue = (float) $orders->sum('total');
+
+        $payments = [
+            'cash' => (float) $orders->sum(fn (Order $o) => $o->cashAmount()),
+            'transfer' => (float) $orders->whereIn('payment_method', ['chuyen_khoan', 'ket_hop'])->sum(fn (Order $o) => $o->nonCashAmount()),
+            'ewallet' => (float) $orders->where('payment_method', 'vi_dien_tu')->sum('total'),
+        ];
+
+        $names = User::whereIn('id', $orders->pluck('created_by')->unique())->pluck('name', 'id');
+        $staff = $orders->groupBy('created_by')->map(fn ($group, $userId) => [
+            'name' => $names[$userId] ?? 'Không rõ',
+            'orders' => $group->count(),
+            'revenue' => (float) $group->sum('total'),
+        ])->sortByDesc('revenue')->values();
+
+        return [
+            'orderCount' => $count,
+            'avgOrder' => $count > 0 ? $revenue / $count : 0.0,
+            'payments' => $payments,
+            'staff' => $staff,
+        ];
     }
 
     /** Các khoảng xem hợp lệ của trang Giờ cao điểm, tính bằng TUẦN (mỗi thứ xuất hiện đúng ngần ấy lần). */
@@ -200,10 +240,11 @@ class ReportController extends Controller
         $menuEngineering = $this->classifyMenuItems($current['rows']);
         $rows = $menuEngineering['rows'];
         $operatingCosts = $this->operatingCosts($location, $period, $start, $end);
+        $breakdown = $this->salesBreakdown($location, $start, $end);
 
         $filename = Str::slug($location->name.'-bao-cao-'.$start->format('Y-m-d').'-den-'.$end->format('Y-m-d')).'.csv';
 
-        return response()->streamDownload(function () use ($rows, $location, $start, $end, $current, $operatingCosts) {
+        return response()->streamDownload(function () use ($rows, $location, $start, $end, $current, $operatingCosts, $breakdown) {
             $out = fopen('php://output', 'w');
 
             // BOM để Excel đọc đúng chữ tiếng Việt có dấu (UTF-8) — thiếu dòng
@@ -221,6 +262,17 @@ class ReportController extends Controller
             fputcsv($out, ['Chi phí nhân sự (đ)', round($operatingCosts['labor'])], ';');
             fputcsv($out, ['Chi phí mặt bằng (đ)', round($operatingCosts['rent'])], ';');
             fputcsv($out, ['Lợi nhuận thực tế (đ)', round($current['profit'] - $operatingCosts['labor'] - $operatingCosts['rent'])], ';');
+            fputcsv($out, ['Số đơn hoàn thành', $breakdown['orderCount']], ';');
+            fputcsv($out, ['Giá trị trung bình/đơn (đ)', round($breakdown['avgOrder'])], ';');
+            fputcsv($out, ['Thu tiền mặt (đ)', round($breakdown['payments']['cash'])], ';');
+            fputcsv($out, ['Thu chuyển khoản (đ)', round($breakdown['payments']['transfer'])], ';');
+            fputcsv($out, ['Thu ví điện tử (đ)', round($breakdown['payments']['ewallet'])], ';');
+            fputcsv($out, [], ';');
+
+            fputcsv($out, ['Nhân viên', 'Số đơn', 'Doanh thu thực nhận (đ)'], ';');
+            foreach ($breakdown['staff'] as $staffRow) {
+                fputcsv($out, [$staffRow['name'], $staffRow['orders'], round($staffRow['revenue'])], ';');
+            }
             fputcsv($out, [], ';');
 
             fputcsv($out, [
@@ -277,7 +329,12 @@ class ReportController extends Controller
     public function resolvePeriodAndAnchor(Request $request): array
     {
         $period = in_array($request->query('period'), ['day', 'week', 'month']) ? $request->query('period') : 'day';
-        $anchor = $request->query('date') ? Carbon::parse($request->query('date')) : Carbon::today();
+        // Ngày gõ sai trên URL (VD ?date=abc) trước đây làm trang lỗi 500 — giờ về hôm nay.
+        try {
+            $anchor = $request->query('date') ? Carbon::parse((string) $request->query('date'))->startOfDay() : Carbon::today();
+        } catch (\Throwable) {
+            $anchor = Carbon::today();
+        }
 
         return [$period, $anchor];
     }
@@ -412,20 +469,33 @@ class ReportController extends Controller
             ->where('salary_type', 'monthly')
             ->sum('salary_amount');
 
-        if ($period === 'month') {
-            $monthlyLabor = $monthlySalaryTotal;
-            $rent = (float) $location->rent_cost;
-        } else {
-            $daysInPeriod = $start->diffInDays($end) + 1;
-            $daysInMonth = $start->daysInMonth;
-            $monthlyLabor = $monthlySalaryTotal / $daysInMonth * $daysInPeriod;
-            $rent = (float) $location->rent_cost / $daysInMonth * $daysInPeriod;
-        }
+        $monthFraction = $period === 'month' ? 1.0 : self::monthFraction($start, $end);
+        $monthlyLabor = $monthlySalaryTotal * $monthFraction;
+        $rent = (float) $location->rent_cost * $monthFraction;
 
         return [
             'labor' => $hourlyLabor + $monthlyLabor,
             'rent' => $rent,
         ];
+    }
+
+    /**
+     * Khoảng [start, end] tương đương bao nhiêu "tháng" để phân bổ chi phí cố định hàng
+     * tháng: mỗi ngày = 1/số-ngày-của-CHÍNH-tháng-đó. Sửa 2 lỗi cũ:
+     * - Carbon 3 trả diffInDays() dạng số thực: 00:00 → 23:59:59 là 0,99999 ngày, cộng 1
+     *   thành ~2 → xem theo NGÀY bị tính GẤP ĐÔI lương tháng/mặt bằng, theo tuần thành 8 ngày.
+     * - Tuần vắt qua 2 tháng (VD 29/09–05/10) trước đây chia hết cho số ngày tháng đầu.
+     * Xem trọn 1 tháng dương lịch ra đúng 1,0.
+     */
+    public static function monthFraction(Carbon $start, Carbon $end): float
+    {
+        $fraction = 0.0;
+        $lastDay = $end->copy()->startOfDay();
+        for ($d = $start->copy()->startOfDay(); $d->lte($lastDay); $d->addDay()) {
+            $fraction += 1 / $d->daysInMonth;
+        }
+
+        return $fraction;
     }
 
     /**

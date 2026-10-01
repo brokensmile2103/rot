@@ -16,9 +16,14 @@ class ProductVariant extends Model
         return ['is_default' => 'boolean', 'price' => 'decimal:2'];
     }
 
+    /**
+     * Kèm cả món ĐÃ XOÁ (mềm): báo cáo, in lại hoá đơn, xuất dữ liệu đọc tên món của
+     * đơn cũ qua quan hệ này — trước đây xoá 1 món từng bán làm các trang đó lỗi 500.
+     * Màn bán hàng nạp món qua Category::products() nên không bị ảnh hưởng.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     public function recipes()

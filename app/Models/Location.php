@@ -20,7 +20,7 @@ class Location extends Model
         'loyalty_enabled', 'points_earn_rate', 'points_redeem_value',
         'einvoice_enabled', 'einvoice_sandbox', 'einvoice_client_id', 'einvoice_client_secret',
         'einvoice_provider_account_id', 'einvoice_template_code', 'einvoice_invoice_series',
-        'einvoice_access_token', 'einvoice_token_expires_at', 'rent_cost', 'qr_ordering_enabled',
+        'einvoice_access_token', 'einvoice_token_expires_at', 'rent_cost', 'qr_ordering_enabled', 'prep_queue_enabled',
     ];
 
     protected function casts(): array
@@ -29,7 +29,7 @@ class Location extends Model
             'is_active' => 'boolean', 'receipt_enabled' => 'boolean', 'loyalty_enabled' => 'boolean',
             'points_earn_rate' => 'decimal:2', 'points_redeem_value' => 'decimal:2',
             'einvoice_enabled' => 'boolean', 'einvoice_sandbox' => 'boolean',
-            'rent_cost' => 'decimal:2', 'qr_ordering_enabled' => 'boolean',
+            'rent_cost' => 'decimal:2', 'qr_ordering_enabled' => 'boolean', 'prep_queue_enabled' => 'boolean',
             // Mã hoá bằng APP_KEY — dữ liệu nhạy cảm (client_secret, access_token) không bao giờ
             // lưu ở dạng đọc được trực tiếp trong database, kể cả khi ai đó truy cập được DB.
             'einvoice_client_secret' => 'encrypted',
@@ -58,6 +58,15 @@ class Location extends Model
     public function publicMenuUrl(): string
     {
         return route('public.menu.show', $this->public_token);
+    }
+
+    /**
+     * Toàn bộ đơn của xe — dùng bởi Xuất dữ liệu (DataExportService). Trước đây
+     * bản self-hosted thiếu quan hệ này nên "Xuất dữ liệu" báo lỗi 500.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 
     public function customerOrderRequests()

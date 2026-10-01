@@ -8,6 +8,7 @@ use App\Models\Ingredient;
 use App\Models\Location;
 use App\Models\StockAdjustment;
 use App\Services\IngredientEditPlan;
+use App\Services\StockForecast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class InventoryController extends Controller
 {
     use ResolvesCurrentLocation;
 
-    public function index(Request $request): View
+    public function index(Request $request, StockForecast $forecast): View
     {
         $location = $this->currentLocation($request);
 
@@ -34,7 +35,10 @@ class InventoryController extends Controller
             ->paginate(30)->withQueryString();
         $trashedIngredients = $location->ingredients()->onlyTrashed()->orderBy('name')->get();
 
-        return view('owner.inventory.index', compact('location', 'ingredients', 'trashedIngredients'));
+        // "Đủ dùng ~X ngày" theo tốc độ tiêu thụ 14 ngày gần nhất — xem StockForecast.
+        $dailyUsage = $forecast->dailyConsumption($location);
+
+        return view('owner.inventory.index', compact('location', 'ingredients', 'trashedIngredients', 'dailyUsage'));
     }
 
     /**
@@ -78,23 +82,25 @@ class InventoryController extends Controller
             'initial_cost' => 'nullable|numeric|min:0',
         ]);
 
-        $item = $location->ingredients()->create([
-            'name' => $data['name'],
-            'unit' => $data['unit'],
-            'low_stock_threshold' => $data['low_stock_threshold'] ?? 0,
-        ]);
-
-        // Cho nhập tồn kho + giá vốn ban đầu ngay lúc tạo, để "Giá vốn TB" có số
-        // đúng ngay từ đầu thay vì hiển thị 0đ cho tới lần nhập kho đầu tiên.
-        if (! empty($data['initial_quantity']) && isset($data['initial_cost'])) {
-            $item->stockIns()->create([
-                'quantity' => $data['initial_quantity'],
-                'total_cost' => $data['initial_cost'],
-                'note' => 'Tồn kho ban đầu',
-                'created_by' => $request->user()->id,
+        DB::transaction(function () use ($location, $data, $request) {
+            $item = $location->ingredients()->create([
+                'name' => $data['name'],
+                'unit' => $data['unit'],
+                'low_stock_threshold' => $data['low_stock_threshold'] ?? 0,
             ]);
-            $item->receiveStock((float) $data['initial_quantity'], (float) $data['initial_cost']);
-        }
+
+            // Cho nhập tồn kho + giá vốn ban đầu ngay lúc tạo, để "Giá vốn TB" có số
+            // đúng ngay từ đầu thay vì hiển thị 0đ cho tới lần nhập kho đầu tiên.
+            if (! empty($data['initial_quantity']) && isset($data['initial_cost'])) {
+                $item->stockIns()->create([
+                    'quantity' => $data['initial_quantity'],
+                    'total_cost' => $data['initial_cost'],
+                    'note' => 'Tồn kho ban đầu',
+                    'created_by' => $request->user()->id,
+                ]);
+                $item->receiveStock((float) $data['initial_quantity'], (float) $data['initial_cost']);
+            }
+        });
 
         return back()->with('status', 'Đã thêm nguyên liệu.');
     }
@@ -290,10 +296,15 @@ class InventoryController extends Controller
         return back()->with('status', 'Đã khôi phục "'.$item->name.'".');
     }
 
+    /**
+     * Nhập kho — KHOÁ dòng nguyên liệu trong transaction: receiveStock() đọc tồn kho rồi
+     * GHI ĐÈ số mới, nếu 1 đơn bán (trừ kho) chen vào giữa thì trước đây lượng vừa bán bị
+     * mất (tồn kho bị cộng khống).
+     */
     public function stockIn(Request $request, int $ingredient): RedirectResponse
     {
         $location = $this->currentLocation($request);
-        $item = $location->ingredients()->findOrFail($ingredient);
+        $location->ingredients()->findOrFail($ingredient);
 
         $data = $request->validate([
             'quantity' => 'required|numeric|min:0.01',
@@ -301,16 +312,133 @@ class InventoryController extends Controller
             'note' => 'nullable|string|max:255',
         ]);
 
-        $item->stockIns()->create([
-            'quantity' => $data['quantity'],
-            'total_cost' => $data['total_cost'],
-            'note' => $data['note'] ?? null,
-            'created_by' => $request->user()->id,
-        ]);
+        $item = DB::transaction(function () use ($location, $ingredient, $data, $request) {
+            $item = $location->ingredients()->whereKey($ingredient)->lockForUpdate()->firstOrFail();
 
-        $item->receiveStock((float) $data['quantity'], (float) $data['total_cost']);
+            $item->stockIns()->create([
+                'quantity' => $data['quantity'],
+                'total_cost' => $data['total_cost'],
+                'note' => $data['note'] ?? null,
+                'created_by' => $request->user()->id,
+            ]);
+
+            $item->receiveStock((float) $data['quantity'], (float) $data['total_cost']);
+
+            return $item;
+        });
 
         return back()->with('status', 'Đã nhập kho '.$item->name.'.');
+    }
+
+    /**
+     * KIỂM KÊ HÀNG LOẠT — đếm thực tế toàn bộ kho rồi nhập 1 lần trên 1 màn hình, thay vì
+     * mở sửa từng nguyên liệu. Mỗi nguyên liệu có số đếm KHÁC sổ sách được ghi 1 dòng vào
+     * Nhật ký điều chỉnh kho (lý do "Kiểm kê thực tế"); giá vốn TB giữ nguyên.
+     */
+    public function stocktake(Request $request): View
+    {
+        $location = $this->currentLocation($request);
+        $ingredients = $location->ingredients()->orderBy('name')->get();
+
+        return view('owner.inventory.stocktake', compact('location', 'ingredients'));
+    }
+
+    public function storeStocktake(Request $request): RedirectResponse
+    {
+        $location = $this->currentLocation($request);
+
+        $data = $request->validate([
+            'counts' => 'required|array',
+            'counts.*' => 'nullable|numeric|min:0',
+            // Tồn kho sổ sách LÚC MỞ trang — đơn bán ra trong lúc đang đếm làm sổ sách
+            // giảm tiếp; chênh lệch được tính trên số lúc mở để không "bắt" nhầm phần đã bán.
+            'snapshot' => 'nullable|array',
+            'snapshot.*' => 'nullable|numeric',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        $counts = collect($data['counts'])->filter(fn ($v) => $v !== null && $v !== '');
+        if ($counts->isEmpty()) {
+            return back()->with('status', 'Chưa nhập số đếm thực tế nào.');
+        }
+
+        [$changed, $shortage, $surplus] = DB::transaction(function () use ($location, $counts, $data, $request) {
+            $changed = 0;
+            $shortage = 0.0;
+            $surplus = 0.0;
+
+            $items = $location->ingredients()->whereIn('id', $counts->keys())->lockForUpdate()->get()->keyBy('id');
+
+            foreach ($counts as $id => $counted) {
+                $item = $items->get((int) $id);
+                if (! $item) {
+                    continue;
+                }
+
+                $before = (float) $item->current_stock;
+                $snapshot = isset($data['snapshot'][$id]) ? (float) $data['snapshot'][$id] : $before;
+                // Phần đã bán/nhập kể từ lúc mở trang vẫn được giữ: số mới = đếm + (hiện tại − lúc mở).
+                $after = round((float) $counted + ($before - $snapshot), 2);
+                $diff = round((float) $counted - $snapshot, 2);
+
+                if (abs($diff) < 0.005) {
+                    continue;
+                }
+
+                $item->update(['current_stock' => $after]);
+
+                StockAdjustment::create([
+                    'location_id' => $location->id,
+                    'ingredient_id' => $item->id,
+                    'user_id' => $request->user()->id,
+                    'reason' => 'kiem_ke',
+                    'stock_before' => $before,
+                    'stock_after' => $after,
+                    'cost_before' => (float) $item->avg_cost_per_unit,
+                    'cost_after' => (float) $item->avg_cost_per_unit,
+                    'note' => $data['note'] ?? 'Kiểm kê hàng loạt',
+                ]);
+
+                $value = abs($diff) * (float) $item->avg_cost_per_unit;
+                if ($diff < 0) {
+                    $shortage += $value;
+                } else {
+                    $surplus += $value;
+                }
+                $changed++;
+            }
+
+            return [$changed, $shortage, $surplus];
+        });
+
+        $message = $changed === 0
+            ? 'Kiểm kê xong — số đếm khớp sổ sách, không có gì cần điều chỉnh.'
+            : "Đã điều chỉnh {$changed} nguyên liệu theo số đếm thực tế (thiếu ~".money($shortage, 0).'đ, dư ~'.money($surplus, 0).'đ). Xem chi tiết ở Nhật ký điều chỉnh.';
+
+        return redirect()->route('owner.inventory.index')->with('status', $message);
+    }
+
+    /**
+     * GỢI Ý NHẬP HÀNG — mỗi nguyên liệu còn đủ dùng bao nhiêu ngày theo tốc độ bán 14
+     * ngày gần nhất, nên nhập thêm bao nhiêu để đủ dùng N ngày (mặc định 7), tiền ước tính.
+     */
+    public function reorder(Request $request, StockForecast $forecast): View
+    {
+        $location = $this->currentLocation($request);
+        $coverDays = (int) $request->query('days', StockForecast::DEFAULT_COVER_DAYS);
+        $coverDays = in_array($coverDays, [3, 7, 14, 30], true) ? $coverDays : StockForecast::DEFAULT_COVER_DAYS;
+
+        $rows = $forecast->forecast($location, $coverDays)
+            ->sortBy(fn ($r) => [$r['urgent'] ? 0 : 1, $r['days_left'] ?? PHP_INT_MAX])
+            ->values();
+
+        return view('owner.inventory.reorder', [
+            'location' => $location,
+            'rows' => $rows,
+            'coverDays' => $coverDays,
+            'windowDays' => StockForecast::CONSUMPTION_WINDOW_DAYS,
+            'totalCost' => $rows->sum('estimated_cost'),
+        ]);
     }
 
 }
