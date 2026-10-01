@@ -2,7 +2,38 @@
 
 Chỉ ghi những thay đổi ảnh hưởng tới người dùng (tính năng mới, sửa lỗi quan trọng). Không ghi các thay đổi kỹ thuật nội bộ không ảnh hưởng tới cách sử dụng.
 
-## v1.3.0 (hiện tại)
+## v1.4.0 (hiện tại)
+
+### Tính năng mới
+
+- **Số thứ tự đơn trong ngày + Hàng chờ pha chế**: mỗi đơn có số thứ tự trong ngày (1, 2, 3...) in to trên hoá đơn, hiện trong thông báo sau khi tính tiền và ở danh sách đơn — gọi số cho khách lấy món. Bật **Cài đặt → Hàng chờ pha chế & gọi số** để có thêm màn **"Pha chế"**: đơn vừa tính tiền xếp hàng theo thứ tự, đổi màu khi khách chờ lâu (≥5/≥10 phút), bấm **"Xong — gọi số"** khi làm xong, hoàn tác được nếu bấm nhầm. Tự cập nhật ~8 giây/lần, dùng được trên máy riêng của người pha chế.
+- **Thanh toán kết hợp (tiền mặt + chuyển khoản)**: khách đưa 1 phần tiền mặt, phần còn lại chuyển khoản — mã VietQR tự điền đúng phần còn lại. Chốt ca chỉ cộng phần tiền mặt vào quỹ, phần chuyển khoản tính vào mục chuyển khoản.
+- **Cảnh báo hết nguyên liệu ngay ở màn Order**: thẻ món hiện "Còn N" khi kho chỉ đủ pha ≤5 phần, "Hết nguyên liệu" khi không còn đủ (tính theo công thức và tồn kho hiện tại); giỏ hàng báo khi số lượng vượt quá lượng kho còn đủ. Chỉ cảnh báo, vẫn cho bán (số sổ sách có thể lệch thực tế).
+- **Gợi ý nhập hàng**: trang mới (Kho → "Gợi ý nhập hàng") — mỗi nguyên liệu dùng bao nhiêu/ngày (theo 14 ngày bán gần nhất), còn đủ dùng mấy ngày, nên nhập thêm bao nhiêu để đủ dùng 3/7/14/30 ngày và tổng tiền ước tính. Danh sách kho cũng hiện "đủ dùng ~X ngày" cho từng nguyên liệu.
+- **Kiểm kê kho hàng loạt**: trang mới (Kho → "Kiểm kê kho") — nhập số đếm thực tế của nhiều nguyên liệu trên 1 màn hình, thấy ngay chênh lệch và giá trị thiếu/dư, lưu 1 lần. Mỗi nguyên liệu lệch được ghi vào Nhật ký điều chỉnh (lý do "Kiểm kê thực tế"). Vẫn bán hàng bình thường trong lúc đếm — phần bán ra trong lúc đếm không bị tính nhầm là hao hụt.
+- **Chốt ca rõ ràng hơn**: tổng kết ca theo hình thức thanh toán (tiền mặt / chuyển khoản / ví) để đối chiếu với ngăn kéo và sao kê ngân hàng; **bộ đếm tiền theo mệnh giá** (500k → 1k) tự cộng tổng vào ô tiền đếm thực tế; cảnh báo trước nếu ca còn đơn nháp.
+- **Báo cáo**: thêm số đơn, giá trị trung bình/đơn, doanh thu theo hình thức thanh toán và theo người bán (trong "Phân tích nâng cao" và file CSV).
+
+### Sửa lỗi quan trọng
+
+- **Xuất dữ liệu bị lỗi 500** ở bản self-hosted (2 nguyên nhân: thiếu quan hệ đơn hàng của xe và sai kiểu trả về) — đã chạy lại bình thường.
+- **Chi phí lương tháng/mặt bằng bị tính gấp đôi khi xem báo cáo theo Ngày** (và thành 8 ngày khi xem theo Tuần) → "Lợi nhuận thực tế" theo ngày/tuần bị thấp hơn thật. Tuần vắt qua 2 tháng giờ cũng phân bổ đúng theo số ngày của từng tháng.
+- **Huỷ 1 đơn 2 lần (hoặc sửa đơn đã huỷ) làm kho/điểm bị hoàn 2 lần** (cộng khống tồn kho). Giờ đơn đã huỷ bị khoá; thêm khoá dữ liệu để 2 thiết bị cùng sửa/huỷ 1 đơn không gây sai lệch.
+- **Huỷ/sửa đơn hoàn kho đúng lượng đã trừ lúc bán**, kể cả khi công thức món đã bị đổi sau đó (trước đây hoàn theo công thức mới).
+- **Báo cáo, in lại hoá đơn bị lỗi 500 sau khi xoá 1 món đã từng bán** — giờ vẫn hiện đúng tên món cũ; món đã xoá không bán được nữa.
+- **Giá vốn TB bị đội lên khi nhập hàng lúc tồn kho đang âm** (bán vượt sổ sách) — giờ phần âm không bị đưa vào bình quân.
+- **Nhập kho cùng lúc có đơn bán ra có thể làm mất lượng vừa bán** (tồn kho cộng khống) — đã khoá dữ liệu khi nhập kho.
+- **Khách hàng thân thiết**: SĐT "0901 234 567" và "0901234567" giờ là 1 khách (trước đây tạo 2 hồ sơ); 2 đơn cùng khách thanh toán đồng thời không còn ghi đè điểm của nhau; tránh lỗi 500 khi SĐT trùng với khách đã xoá.
+- **Bấm "Mở ca" 2 lần tạo ra 2 ca cùng mở** (ca cũ treo mãi, tiền đầu ca bị tính 2 lần); bấm "Chốt ca" 2 lần không còn ghi đè kết quả.
+- **Đơn nháp còn lại lúc chốt ca bị kẹt vĩnh viễn** (không mở lại/hoàn tất được) — giờ màn Chốt ca cảnh báo trước và tự huỷ các đơn nháp đó khi chốt (nháp chưa thu tiền, chưa trừ kho).
+- **Hoá đơn in thiếu dòng "Dùng điểm"** khi khách đổi điểm mà không có giảm giá khác.
+- Đường dẫn có ngày/tháng gõ sai (VD `?date=abc` ở Báo cáo, `?month=abc` ở Bảng công) không còn gây lỗi 500.
+
+### Nâng cấp
+
+Chạy `php artisan migrate` (1 migration mới: số thứ tự, hàng chờ pha chế, thanh toán kết hợp, lưu lượng nguyên liệu đã trừ của từng món bán ra) rồi `npm run build`. Dữ liệu cũ giữ nguyên; đơn bán trước khi nâng cấp không có số thứ tự và vẫn hoàn kho theo công thức hiện tại như trước.
+
+## v1.3.0
 
 - **Chọn mô hình kinh doanh**: Cài đặt → mục "Mô hình kinh doanh" mới — chọn giữa **Quán cà phê / Xe nước**, **Quán ăn nhỏ**, **Tiệm tóc / gội đầu / làm đẹp** hoặc **Khác** (tự gõ 1 từ, VD: "suất ăn", "gói dịch vụ"). Chỉ đổi CHỮ và ICON hiển thị cho đúng ngành hàng — menu điều hướng, tên trang, nhãn nút, mã QR cho khách... — nghiệp vụ bán hàng, kho, ca làm, báo cáo, sổ doanh thu giữ nguyên y hệt, đổi qua lại thoải mái không mất dữ liệu. Khi thêm xe/quán mới cũng chọn được mô hình ngay từ đầu.
 - **Tiệm tóc / gội đầu, làm đẹp**: phù hợp với tiệm phục vụ khách vãng lai, xếp lượt tại chỗ — chưa hỗ trợ đặt lịch hẹn trước, mục chọn mô hình có ghi chú rõ điều này.

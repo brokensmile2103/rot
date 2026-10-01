@@ -84,7 +84,7 @@ class LocationController extends Controller
         $location->staff()->attach($request->user()->id);
         $location->categories()->create(['name' => $terms['default_category_name'], 'sort_order' => 0]);
 
-        return redirect()->route('owner.locations.index')->with('status', 'Đã thêm '.mb_strtolower($terms['locations_label']).' mới.');
+        return redirect()->route('owner.locations.index')->with('status', 'Đã thêm '.$terms['location_singular'].' mới.');
     }
 
     public function update(Request $request, int $location): RedirectResponse

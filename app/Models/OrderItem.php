@@ -8,7 +8,7 @@ class OrderItem extends Model
 {
     protected $fillable = [
         'order_id', 'product_variant_id', 'quantity', 'unit_price', 'line_total',
-        'discount_type', 'discount_value', 'discount_amount', 'unit_cost', 'total_cost',
+        'discount_type', 'discount_value', 'discount_amount', 'unit_cost', 'total_cost', 'stock_deductions',
     ];
 
     protected function casts(): array
@@ -20,6 +20,7 @@ class OrderItem extends Model
             'discount_amount' => 'decimal:2',
             'unit_cost' => 'decimal:4',
             'total_cost' => 'decimal:2',
+            'stock_deductions' => 'array',
         ];
     }
 
@@ -30,7 +31,8 @@ class OrderItem extends Model
 
     public function variant()
     {
-        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+        // Đơn cũ vẫn phải đọc được size đã xoá (mềm) — xem ProductVariant::product().
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id')->withTrashed();
     }
 
     public function modifiers()

@@ -101,6 +101,9 @@
                 <div class="flex items-center justify-between">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
+                            @if($order->daily_number)
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-900 text-white font-bold" title="Số thứ tự trong ngày">Số {{ $order->daily_number }}</span>
+                            @endif
                             <span class="text-neutral-900 font-semibold text-sm">Đơn #{{ $order->id }}</span>
                             <span class="text-xs px-2 py-0.5 rounded-full font-medium
                                          {{ $isCancelled ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700' }}">
@@ -136,7 +139,11 @@
                         <div class="text-neutral-500 text-xs mt-0.5">
                             {{ $order->completed_at?->format('H:i') }} ·
                             {{ $order->order_type === 'mang_di' ? 'Mang đi' : 'Ngồi lại' }} ·
-                            {{ $order->items->sum('quantity') }} món
+                            {{ $order->items->sum('quantity') }} món ·
+                            {{ $order->payment_method === 'ket_hop' ? 'TM '.money($order->cashAmount()).'đ + CK '.money($order->nonCashAmount()).'đ' : $order->paymentLabel() }}
+                            @if($order->prep_status === 'cho_pha')
+                                · <span class="text-amber-600 font-semibold">Đang chờ pha chế</span>
+                            @endif
                         </div>
                     </div>
                     <div class="text-right shrink-0">

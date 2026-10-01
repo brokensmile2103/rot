@@ -135,6 +135,7 @@ class SePayEInvoiceService
                 'payment_method' => match ($order->payment_method) {
                     'tien_mat' => 'TM',
                     'chuyen_khoan' => 'CK',
+                    'ket_hop' => 'TM/CK',
                     default => 'KHAC',
                 },
                 'is_draft' => false,

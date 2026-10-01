@@ -235,6 +235,23 @@
         @endif
     </div>
 
+    {{-- Hàng chờ pha chế — đơn hoàn tất xếp hàng ở màn "Pha chế", bấm Xong để gọi số khách. --}}
+    <form method="POST" action="{{ route('owner.settings.prep-queue') }}" class="bg-white rounded-2xl p-5 border border-neutral-200 shadow-sm space-y-4">
+        @csrf @method('PUT')
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-neutral-400"></i>Hàng chờ pha chế &amp; gọi số
+            </p>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" name="prep_queue_enabled" value="1" class="sr-only peer" {{ old('prep_queue_enabled', $location->prep_queue_enabled) ? 'checked' : '' }}>
+                <div class="w-11 h-6 bg-neutral-200 rounded-full peer-checked:bg-[var(--accent)] transition-colors"></div>
+                <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </label>
+        </div>
+        <p class="text-xs text-neutral-400 -mt-2">Mỗi đơn có <strong>số thứ tự trong ngày</strong> (in trên hoá đơn). Bật mục này để đơn vừa tính tiền xếp vào màn <strong>"Pha chế"</strong> — người pha chế thấy đơn nào làm trước, bấm "Xong" để gọi số khách lấy món. Hợp với lúc đông khách hoặc 1 người thu ngân + 1 người pha chế.</p>
+        <x-button icon="fa-floppy-disk">Lưu cài đặt pha chế</x-button>
+    </form>
+
     {{-- Chi phí vận hành — hiện chỉ có mặt bằng, dùng để tính "Lợi nhuận thực tế" ở trang Báo cáo.
          CỐ TÌNH ghi rõ tên xe ngay trong tiêu đề (giống trang Nhân viên) — vì đây LÀ cài đặt RIÊNG
          cho từng xe (giống màu giao diện, thông tin ngân hàng...), không phải cài đặt chung cho cả

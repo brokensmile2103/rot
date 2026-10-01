@@ -57,6 +57,8 @@
         </div>
     </div>
 
+    @include('pos.partials.shift-summary', ['summary' => $summary])
+
     <div class="space-y-2">
         <a href="{{ route('shift.create') }}" class="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-base transition active:scale-[0.98] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-lg shadow-[var(--accent)]/25">
             <i class="fa-solid fa-play"></i>Mở ca mới

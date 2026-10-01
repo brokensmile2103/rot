@@ -48,17 +48,33 @@ class Ingredient extends Model
 
     /**
      * Nhập thêm nguyên liệu, tự tính lại giá vốn trung bình (weighted average).
+     *
+     * Tồn kho có thể ÂM (bán vượt số sổ sách khi chưa kịp nhập hàng). Phần âm đó
+     * đã được tính giá vốn lúc bán, nên KHÔNG được đưa vào bình quân: trước đây
+     * (-100 × giá cũ + tiền lô mới) / (tồn mới) làm giá vốn TB bị đội lên sai. Giờ
+     * chỉ phần tồn DƯƠNG mới tham gia bình quân; tồn ≤ 0 thì giá vốn = giá lô mới.
      */
     public function receiveStock(float $quantity, float $totalCost): void
     {
-        $currentValue = (float) $this->current_stock * (float) $this->avg_cost_per_unit;
-        $newStock = (float) $this->current_stock + $quantity;
-        $newAvgCost = $newStock > 0 ? ($currentValue + $totalCost) / $newStock : 0;
+        $avg = self::weightedAverageCost((float) $this->current_stock, (float) $this->avg_cost_per_unit, $quantity, $totalCost);
 
         $this->update([
-            'current_stock' => $newStock,
-            'avg_cost_per_unit' => $newAvgCost,
+            'current_stock' => (float) $this->current_stock + $quantity,
+            'avg_cost_per_unit' => $avg,
         ]);
+    }
+
+    /** Thuần (không đụng DB) để kiểm thử — xem receiveStock(). */
+    public static function weightedAverageCost(float $stock, float $avgCost, float $quantity, float $totalCost): float
+    {
+        $positiveStock = max(0.0, $stock);
+        $base = $positiveStock + $quantity;
+
+        if ($base <= 0) {
+            return $avgCost;
+        }
+
+        return ($positiveStock * $avgCost + $totalCost) / $base;
     }
 
     public function deductStock(float $quantity): void

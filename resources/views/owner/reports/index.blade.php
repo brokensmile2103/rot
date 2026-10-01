@@ -88,6 +88,51 @@
         </button>
 
         <div x-show="advancedOpen" x-cloak class="mt-3 space-y-3">
+            {{-- Số đơn, giá trị TB/đơn, thu theo hình thức thanh toán và theo nhân viên. --}}
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-4">
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <div class="text-xs text-neutral-500 font-medium">Số đơn hoàn thành</div>
+                        <div class="text-lg font-bold text-neutral-900">{{ number_format($breakdown['orderCount'], 0, ',', '.') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-neutral-500 font-medium">Trung bình/đơn</div>
+                        <div class="text-lg font-bold text-neutral-900">{{ money($breakdown['avgOrder']) }}đ</div>
+                    </div>
+                </div>
+                @php
+                    $payTotal = max(1, array_sum($breakdown['payments']));
+                    $payRows = [
+                        ['Tiền mặt', 'fa-money-bill-wave', $breakdown['payments']['cash'], 'bg-emerald-500'],
+                        ['Chuyển khoản', 'fa-building-columns', $breakdown['payments']['transfer'], 'bg-blue-500'],
+                        ['Ví điện tử', 'fa-wallet', $breakdown['payments']['ewallet'], 'bg-violet-500'],
+                    ];
+                @endphp
+                <div class="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-2">Theo hình thức thanh toán</div>
+                <div class="space-y-2 mb-4">
+                    @foreach($payRows as [$label, $icon, $amount, $bar])
+                        <div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-600"><i class="fa-solid {{ $icon }} w-5 text-neutral-400"></i>{{ $label }}</span>
+                                <span class="font-semibold text-neutral-900">{{ money($amount) }}đ <span class="text-xs text-neutral-400 font-normal">({{ number_format($amount / $payTotal * 100, 0) }}%)</span></span>
+                            </div>
+                            <div class="h-1.5 bg-neutral-100 rounded-full mt-1 overflow-hidden"><div class="h-full {{ $bar }} rounded-full" style="width: {{ round($amount / $payTotal * 100, 1) }}%"></div></div>
+                        </div>
+                    @endforeach
+                </div>
+                @if($breakdown['staff']->isNotEmpty())
+                    <div class="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-2">Theo người bán</div>
+                    <div class="divide-y divide-neutral-100">
+                        @foreach($breakdown['staff'] as $staffRow)
+                            <div class="flex justify-between text-sm py-1.5">
+                                <span class="text-neutral-700 truncate">{{ $staffRow['name'] }} <span class="text-xs text-neutral-400">· {{ $staffRow['orders'] }} đơn</span></span>
+                                <span class="font-semibold text-neutral-900 shrink-0">{{ money($staffRow['revenue']) }}đ</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
             {{-- Lợi nhuận thực tế (đã trừ lương + mặt bằng) — chỉ hiện khi đã thiết lập
                  ít nhất 1 trong 2 khoản này (trang Nhân viên / Cài đặt), tránh làm rối
                  mắt quán chưa dùng tới tính năng này với toàn số 0. --}}

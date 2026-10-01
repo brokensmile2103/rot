@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Services\QuickSetupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ShiftController extends Controller
@@ -45,6 +46,12 @@ class ShiftController extends Controller
             'opening_cash' => 'required|numeric|min:0',
         ]);
 
+        // Bấm "Mở ca" 2 lần (mạng chậm, bấm lại) trước đây tạo 2 ca cùng mở — ca cũ bị
+        // "treo" vĩnh viễn, không bao giờ chốt được và tiền đầu ca bị tính 2 lần.
+        if ($location->openShiftFor($request->user())) {
+            return redirect()->route('pos.order')->with('status', 'Bạn đang có ca mở rồi — tiếp tục bán nhé.');
+        }
+
         $location->shifts()->create([
             'user_id' => $request->user()->id,
             'opening_cash' => $data['opening_cash'],
@@ -66,6 +73,7 @@ class ShiftController extends Controller
         return view('pos.shift-close', [
             'shift' => $shift,
             'expected' => $shift->expectedCash(),
+            'summary' => $shift->salesSummary(),
         ]);
     }
 
@@ -79,14 +87,27 @@ class ShiftController extends Controller
             'closing_cash_actual' => 'required|numeric|min:0',
         ]);
 
-        $expected = $shift->expectedCash();
+        DB::transaction(function () use ($shift, $data) {
+            // Khoá dòng ca: bấm "Chốt ca" 2 lần liên tiếp không được ghi đè kết quả lần đầu.
+            $shift = $shift->newQuery()->whereKey($shift->id)->lockForUpdate()->first();
+            if ($shift->closed_at !== null) {
+                return;
+            }
 
-        $shift->update([
-            'closing_cash_expected' => $expected,
-            'closing_cash_actual' => $data['closing_cash_actual'],
-            'variance' => $data['closing_cash_actual'] - $expected,
-            'closed_at' => now(),
-        ]);
+            // Đơn NHÁP còn treo trong ca: sau khi chốt, ca bị khoá nên đơn nháp không bao
+            // giờ mở lại/hoàn tất được nữa (trước đây nằm kẹt vĩnh viễn). Nháp chưa trừ kho,
+            // chưa thu tiền nên huỷ là an toàn; màn Chốt ca đã cảnh báo trước số đơn này.
+            $shift->orders()->where('status', 'nhap')->update(['status' => 'da_huy', 'edited_at' => now()]);
+
+            $expected = $shift->expectedCash();
+
+            $shift->update([
+                'closing_cash_expected' => $expected,
+                'closing_cash_actual' => $data['closing_cash_actual'],
+                'variance' => $data['closing_cash_actual'] - $expected,
+                'closed_at' => now(),
+            ]);
+        });
 
         // Đưa sang màn "Kết quả chốt ca" thay vì thẳng tới mở ca mới — chênh
         // lệch quỹ trước đây chỉ nằm lọt trong 1 dòng flash message chữ nhỏ,
@@ -111,7 +132,7 @@ class ShiftController extends Controller
         $shiftModel = $location->shifts()->whereNotNull('closed_at')->findOrFail($shift);
         abort_unless($user->isOwner() || $shiftModel->user_id === $user->id, 403);
 
-        return view('pos.shift-close-result', ['shift' => $shiftModel]);
+        return view('pos.shift-close-result', ['shift' => $shiftModel, 'summary' => $shiftModel->salesSummary()]);
     }
 
     /** Danh sách các ca ĐÃ CHỐT — chủ quán xem được tất cả, nhân viên chỉ xem ca của chính mình. Lọc được theo ngày mở ca. */

@@ -204,6 +204,21 @@ class SettingsController extends Controller
             : 'Đã tắt đặt món qua QR.');
     }
 
+    /**
+     * Hàng chờ pha chế + số thứ tự: đơn hoàn tất sẽ nằm ở màn "Pha chế" cho tới khi nhân
+     * viên bấm "Xong" (gọi số khách lấy món). Số thứ tự trong ngày luôn được cấp, kể cả khi tắt.
+     */
+    public function updatePrepQueue(Request $request): RedirectResponse
+    {
+        $location = $this->currentLocation($request);
+
+        $location->update(['prep_queue_enabled' => $request->boolean('prep_queue_enabled')]);
+
+        return back()->with('status', $location->prep_queue_enabled
+            ? 'Đã bật hàng chờ pha chế — mở mục "Pha chế" để xem các đơn đang chờ làm.'
+            : 'Đã tắt hàng chờ pha chế.');
+    }
+
     /** Đổi sang link/QR mới — link cũ (nếu lỡ để lộ) sẽ không dùng được nữa. */
     public function regenerateQrToken(Request $request): RedirectResponse
     {

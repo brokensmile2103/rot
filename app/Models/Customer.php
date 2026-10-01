@@ -13,7 +13,7 @@ class Customer extends Model
 
     protected function casts(): array
     {
-        return ['total_spent' => 'decimal:2'];
+        return ['total_spent' => 'decimal:2', 'points' => 'integer'];
     }
 
     public function location()

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pos;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ResolvesCurrentLocation;
 use App\Models\Customer;
+use App\Models\Ingredient;
 use App\Models\CustomerOrderRequest;
 use App\Models\Location;
 use App\Models\Modifier;
@@ -14,6 +15,8 @@ use App\Models\ProductVariant;
 use App\Models\Recipe;
 use App\Services\QuickSetupService;
 use App\Services\SePayEInvoiceService;
+use App\Services\StockForecast;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +35,7 @@ class OrderController extends Controller
     public function __construct(
         private SePayEInvoiceService $einvoiceService,
         private QuickSetupService $quickSetup,
+        private StockForecast $stockForecast,
     ) {
     }
 
@@ -59,6 +63,7 @@ class OrderController extends Controller
             // đăng ký là CHƯA thiết lập gì) — tránh case món placeholder vẫn
             // đang is_available=true khiến banner này không bao giờ hiện ra.
             'showQuickSetupBanner' => ! $this->quickSetup->hasExistingMenu($location),
+            'sellable' => $this->stockForecast->sellableByVariant($location),
         ]);
     }
 
@@ -85,15 +90,19 @@ class OrderController extends Controller
 
             $total = $amountAfterDiscount - $pointsRedeemedValue;
             $pointsEarned = $this->calculatePointsEarned($location, $customer, $total);
+            [$paymentMethod, $cashPortion] = self::resolvePayment($data['payment_method'], $data['cash_portion'] ?? null, $total);
 
             $order = Order::create([
                 'location_id' => $location->id,
                 'customer_id' => $customer?->id,
                 'shift_id' => $shift->id,
+                'daily_number' => $this->nextDailyNumber($location),
                 'order_type' => $data['order_type'],
                 'guest_count' => $data['guest_count'] ?? null,
                 'status' => 'hoan_thanh',
-                'payment_method' => $data['payment_method'],
+                'prep_status' => $location->prep_queue_enabled ? Order::PREP_WAITING : null,
+                'payment_method' => $paymentMethod,
+                'cash_portion' => $cashPortion,
                 'subtotal' => $subtotal,
                 'discount_type' => $data['discount_type'] ?? null,
                 'discount_value' => $data['discount_value'] ?? null,
@@ -119,12 +128,13 @@ class OrderController extends Controller
         $this->einvoiceService->createInvoice($order);
 
         $change = null;
-        if ($data['payment_method'] === 'tien_mat' && isset($data['cash_received'])) {
+        if ($order->payment_method === 'tien_mat' && isset($data['cash_received'])) {
             $change = max(0, (float) $data['cash_received'] - (float) $order->total);
         }
 
         return response()->json([
             'order_id' => $order->id,
+            'daily_number' => $order->daily_number,
             'total' => (float) $order->total,
             'change' => $change,
         ]);
@@ -305,6 +315,7 @@ class OrderController extends Controller
             'showQuickSetupBanner' => false,
             'acceptedRequest' => $requestModel,
             'skippedRequestItems' => $skippedCount,
+            'sellable' => $this->stockForecast->sellableByVariant($location),
         ]);
     }
 
@@ -352,6 +363,7 @@ class OrderController extends Controller
             'editingOrder' => $orderModel,
             'initialCart' => $initialCart,
             'draftCount' => 0,
+            'sellable' => $this->stockForecast->sellableByVariant($location),
         ]);
     }
 
@@ -364,12 +376,16 @@ class OrderController extends Controller
     public function update(Request $request, int $order): JsonResponse
     {
         $location = $this->currentLocation($request, false);
-        $orderModel = $this->findEditableOrder($request, $location, $order);
-        $wasDraft = $orderModel->isDraft();
+        $this->findEditableOrder($request, $location, $order);
 
         $data = $this->validateCart($request);
 
-        DB::transaction(function () use ($data, $orderModel, $wasDraft, $location) {
+        $orderModel = DB::transaction(function () use ($data, $order, $location) {
+            // KHOÁ dòng đơn rồi đọc lại trạng thái: 2 thiết bị cùng bấm Lưu/Huỷ 1 đơn
+            // gần như đồng thời trước đây có thể hoàn kho/hoàn điểm 2 lần.
+            $orderModel = $this->lockEditableOrder($location, $order);
+            $wasDraft = $orderModel->isDraft();
+
             if (! $wasDraft) {
                 $this->reverseOrderInventory($orderModel);
                 $this->reverseOrderPoints($orderModel);
@@ -387,12 +403,14 @@ class OrderController extends Controller
 
             $total = $amountAfterDiscount - $pointsRedeemedValue;
             $pointsEarned = $this->calculatePointsEarned($location, $customer, $total);
+            [$paymentMethod, $cashPortion] = self::resolvePayment($data['payment_method'], $data['cash_portion'] ?? null, $total);
 
             $orderModel->update([
                 'customer_id' => $customer?->id,
                 'order_type' => $data['order_type'],
                 'guest_count' => $data['guest_count'] ?? null,
-                'payment_method' => $data['payment_method'],
+                'payment_method' => $paymentMethod,
+                'cash_portion' => $cashPortion,
                 'subtotal' => $subtotal,
                 'discount_type' => $data['discount_type'] ?? null,
                 'discount_value' => $data['discount_value'] ?? null,
@@ -402,12 +420,19 @@ class OrderController extends Controller
                 'points_redeemed_value' => $pointsRedeemedValue,
                 'total' => $total,
                 'status' => 'hoan_thanh',
-                'completed_at' => $orderModel->completed_at ?? now(),
+                // Đơn nháp hoàn tất lúc này mới thật sự "bán" → lấy số thứ tự + vào hàng chờ pha chế.
+                'daily_number' => $orderModel->daily_number ?? $this->nextDailyNumber($location),
+                'prep_status' => $wasDraft
+                    ? ($location->prep_queue_enabled ? Order::PREP_WAITING : null)
+                    : $orderModel->prep_status,
+                'completed_at' => $wasDraft ? now() : ($orderModel->completed_at ?? now()),
                 'edited_at' => $wasDraft ? null : now(),
             ]);
 
             $this->createOrderItems($orderModel, $itemsToCreate);
             $customer?->applyOrder($pointsEarned, $pointsRedeemed, (float) $total);
+
+            return $orderModel;
         });
 
         // Chỉ xuất hoá đơn điện tử nếu đơn này CHƯA TỪNG xuất trước đó — sửa
@@ -418,7 +443,13 @@ class OrderController extends Controller
             $this->einvoiceService->createInvoice($orderModel);
         }
 
-        return response()->json(['order_id' => $orderModel->id, 'total' => (float) $orderModel->fresh()->total]);
+        $fresh = $orderModel->fresh();
+
+        return response()->json([
+            'order_id' => $fresh->id,
+            'daily_number' => $fresh->daily_number,
+            'total' => (float) $fresh->total,
+        ]);
     }
 
     /** Cập nhật lại nội dung đơn NHÁP (chưa hoàn tất) — vẫn không trừ kho. */
@@ -439,7 +470,10 @@ class OrderController extends Controller
             'note' => 'nullable|string|max:100',
         ]);
 
-        DB::transaction(function () use ($data, $orderModel, $location) {
+        DB::transaction(function () use ($data, $order, $location) {
+            $orderModel = $this->lockEditableOrder($location, $order);
+            abort_unless($orderModel->isDraft(), 422, 'Đơn này đã hoàn tất, không thể lưu nháp lại.');
+
             $orderModel->items()->delete();
             [$subtotal, $itemsToCreate] = $this->buildItemsFromCart($data['items'], $location);
 
@@ -459,17 +493,19 @@ class OrderController extends Controller
     public function cancel(Request $request, int $order): RedirectResponse
     {
         $location = $this->currentLocation($request, false);
-        $orderModel = $this->findEditableOrder($request, $location, $order);
+        $this->findEditableOrder($request, $location, $order);
 
-        DB::transaction(function () use ($orderModel) {
+        DB::transaction(function () use ($location, $order) {
+            $orderModel = $this->lockEditableOrder($location, $order);
+
             if (! $orderModel->isDraft()) {
                 $this->reverseOrderInventory($orderModel);
                 $this->reverseOrderPoints($orderModel);
             }
-            $orderModel->update(['status' => 'da_huy', 'edited_at' => now()]);
+            $orderModel->update(['status' => 'da_huy', 'prep_status' => null, 'edited_at' => now()]);
         });
 
-        return redirect()->route('pos.orders.index')->with('status', 'Đã huỷ đơn #'.$orderModel->id.'.');
+        return redirect()->route('pos.orders.index')->with('status', 'Đã huỷ đơn #'.$order.'.');
     }
 
     /** Trang in hoá đơn — layout riêng tối giản, khổ giấy theo cài đặt của xe. */
@@ -507,14 +543,13 @@ class OrderController extends Controller
     private function resolveCustomerAndRedemption(
         Location $location, ?string $phone, ?string $name, ?int $requestedRedeem, float $amountAfterDiscount
     ): array {
+        $phone = self::normalizePhone($phone);
+
         if (! $location->loyalty_enabled || ! $phone) {
             return [null, 0, 0];
         }
 
-        $customer = $location->customers()->firstOrCreate(
-            ['phone' => $phone],
-            ['name' => $name]
-        );
+        $customer = $this->findOrCreateCustomerLocked($location, $phone, $name);
 
         if ($name && $customer->name !== $name) {
             $customer->update(['name' => $name]);
@@ -526,6 +561,92 @@ class OrderController extends Controller
         $redeemedValue = round($actualRedeemed * $redeemRate, 2);
 
         return [$customer, $actualRedeemed, $redeemedValue];
+    }
+
+    /**
+     * Tìm khách theo SĐT và KHOÁ dòng đó tới hết transaction — điểm được đọc rồi ghi lại
+     * (applyOrder), 2 đơn cùng khách thanh toán đồng thời trước đây có thể ghi đè điểm
+     * của nhau. Tính cả khách đã xoá mềm (khôi phục lại): bảng customers có UNIQUE
+     * (location_id, phone) nên firstOrCreate() bỏ qua khách đã xoá rồi INSERT trùng → lỗi 500.
+     */
+    private function findOrCreateCustomerLocked(Location $location, string $phone, ?string $name): Customer
+    {
+        $find = fn () => Customer::withTrashed()
+            ->where('location_id', $location->id)
+            ->where('phone', $phone)
+            ->lockForUpdate()
+            ->first();
+
+        $customer = $find();
+
+        if (! $customer) {
+            try {
+                // Savepoint riêng: nếu INSERT trùng (thiết bị khác vừa tạo cùng SĐT) thì chỉ
+                // lùi lại đúng câu lệnh này, transaction thanh toán bên ngoài vẫn tiếp tục.
+                return DB::transaction(fn () => $location->customers()->create(['phone' => $phone, 'name' => $name]));
+            } catch (UniqueConstraintViolationException) {
+                $customer = $find();
+            }
+        }
+
+        if ($customer->trashed()) {
+            $customer->restore();
+        }
+
+        return $customer;
+    }
+
+    /**
+     * Chuẩn hoá SĐT về chỉ còn chữ số (giữ dấu + đầu số quốc tế) — "0901 234 567",
+     * "0901.234.567" và "0901234567" trước đây bị coi là 3 khách khác nhau.
+     */
+    public static function normalizePhone(?string $phone): ?string
+    {
+        if ($phone === null) {
+            return null;
+        }
+
+        $normalized = preg_replace('/(?!^\+)[^0-9]/', '', trim($phone));
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    /**
+     * Thanh toán KẾT HỢP: khách trả 1 phần tiền mặt, phần còn lại chuyển khoản. Server
+     * tự chuẩn hoá theo tổng tiền THẬT: phần tiền mặt ≤ 0 → coi là chuyển khoản; ≥ tổng
+     * tiền → coi là tiền mặt — không bao giờ lưu phần tiền mặt lớn hơn tổng đơn.
+     *
+     * @return array{0: string, 1: ?float}
+     */
+    public static function resolvePayment(string $method, mixed $cashPortion, float $total): array
+    {
+        if ($method !== 'ket_hop') {
+            return [$method, null];
+        }
+
+        $cash = round(max(0.0, (float) $cashPortion), 2);
+
+        return match (true) {
+            $cash <= 0 => ['chuyen_khoan', null],
+            $cash >= round($total, 2) => ['tien_mat', null],
+            default => ['ket_hop', $cash],
+        };
+    }
+
+    /**
+     * Số thứ tự tiếp theo TRONG NGÀY của xe (1, 2, 3...) — để gọi khách lấy món. KHOÁ
+     * dòng location trong transaction đang mở để 2 máy cùng thanh toán không bị trùng số.
+     */
+    private function nextDailyNumber(Location $location): int
+    {
+        Location::whereKey($location->id)->lockForUpdate()->first(['id']);
+
+        $max = Order::where('location_id', $location->id)
+            ->whereNotNull('daily_number')
+            ->whereBetween('completed_at', [now()->startOfDay(), now()->endOfDay()])
+            ->max('daily_number');
+
+        return ((int) $max) + 1;
     }
 
     /** Số điểm kiếm được từ đơn này — tính trên số tiền THỰC TRẢ (đã trừ hết mọi giảm giá). */
@@ -558,7 +679,7 @@ class OrderController extends Controller
         $location = $this->currentLocation($request, false);
         $data = $request->validate(['phone' => 'required|string|max:20']);
 
-        $customer = $location->customers()->where('phone', $data['phone'])->first();
+        $customer = $location->customers()->where('phone', self::normalizePhone($data['phone']))->first();
 
         return response()->json([
             'found' => (bool) $customer,
@@ -616,8 +737,9 @@ class OrderController extends Controller
     {
         return $request->validate([
             'order_type' => 'required|in:mang_di,ngoi_lai',
-            'guest_count' => 'nullable|integer|min:1',
-            'payment_method' => 'required|in:tien_mat,chuyen_khoan,vi_dien_tu',
+            'guest_count' => 'nullable|integer|min:1|max:999',
+            'payment_method' => 'required|in:tien_mat,chuyen_khoan,vi_dien_tu,ket_hop',
+            'cash_portion' => 'nullable|required_if:payment_method,ket_hop|numeric|min:0',
             'cash_received' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:percent,amount',
             'discount_value' => 'nullable|numeric|min:0',
@@ -686,7 +808,9 @@ class OrderController extends Controller
         $itemsToCreate = [];
 
         foreach ($items as $line) {
-            $variant = ProductVariant::whereHas('product.category', fn ($q) => $q->where('location_id', $location->id))
+            // withoutTrashed(): quan hệ product() đọc cả món đã xoá (cho báo cáo), nhưng KHÔNG được bán món đã xoá.
+            $variant = ProductVariant::whereHas('product', fn ($q) => $q->withoutTrashed()
+                ->whereHas('category', fn ($c) => $c->where('location_id', $location->id)))
                 ->findOrFail($line['variant_id']);
             $modifierIds = $line['modifier_ids'] ?? [];
             $modifiers = Modifier::whereHas('group', fn ($q) => $q->where('location_id', $location->id))
@@ -722,17 +846,34 @@ class OrderController extends Controller
         return [$subtotal, $itemsToCreate];
     }
 
-    /** Tạo order_items + snapshot giá vốn + trừ kho — dùng khi đơn THỰC SỰ hoàn tất (tạo mới, sửa đơn, hoặc hoàn tất từ nháp). */
+    /**
+     * Tạo order_items + snapshot giá vốn + trừ kho — dùng khi đơn THỰC SỰ hoàn tất (tạo
+     * mới, sửa đơn, hoặc hoàn tất từ nháp). Lượng nguyên liệu trừ thật được lưu lại ở
+     * stock_deductions để huỷ/sửa đơn hoàn đúng số đã trừ (xem reverseOrderInventory()).
+     * Công thức được nạp 1 LẦN cho cả đơn thay vì 2 truy vấn mỗi dòng.
+     */
     private function createOrderItems(Order $order, array $itemsToCreate): void
     {
-        foreach ($itemsToCreate as $line) {
-            $variantRecipes = Recipe::where('product_variant_id', $line['variant_id'])->with('ingredient')->get();
-            $modifierIds = collect($line['modifiers'])->pluck('id');
-            $modifierRecipes = ModifierRecipe::whereIn('modifier_id', $modifierIds)->with('ingredient')->get();
+        $variantIds = collect($itemsToCreate)->pluck('variant_id')->unique();
+        $modifierIds = collect($itemsToCreate)->flatMap(fn ($l) => collect($l['modifiers'])->pluck('id'))->unique();
 
-            $costPerUnit = fn ($r) => (float) $r->quantity * (float) ($r->ingredient?->avg_cost_per_unit ?? 0);
-            $unitCost = $variantRecipes->sum($costPerUnit) + $modifierRecipes->sum($costPerUnit);
+        $recipesByVariant = Recipe::whereIn('product_variant_id', $variantIds)->with('ingredient')->get()->groupBy('product_variant_id');
+        $recipesByModifier = ModifierRecipe::whereIn('modifier_id', $modifierIds)->with('ingredient')->get()->groupBy('modifier_id');
+
+        foreach ($itemsToCreate as $line) {
+            $recipes = ($recipesByVariant[$line['variant_id']] ?? collect())
+                ->concat(collect($line['modifiers'])->flatMap(fn ($m) => $recipesByModifier[$m->id] ?? collect()))
+                ->filter(fn ($r) => $r->ingredient !== null);
+
+            $unitCost = $recipes->sum(fn ($r) => (float) $r->quantity * (float) $r->ingredient->avg_cost_per_unit);
             $totalCost = $unitCost * $line['quantity'];
+
+            // Gộp theo nguyên liệu (1 nguyên liệu có thể nằm ở cả công thức gốc lẫn topping).
+            $deductions = $recipes->groupBy('ingredient_id')
+                ->map(fn ($group, $ingredientId) => [
+                    'i' => (int) $ingredientId,
+                    'q' => round($group->sum(fn ($r) => (float) $r->quantity) * $line['quantity'], 4),
+                ])->values();
 
             $item = $order->items()->create([
                 'product_variant_id' => $line['variant_id'],
@@ -744,6 +885,7 @@ class OrderController extends Controller
                 'discount_amount' => $line['discount_amount'],
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
+                'stock_deductions' => $deductions->all(),
             ]);
 
             foreach ($line['modifiers'] as $modifier) {
@@ -753,9 +895,10 @@ class OrderController extends Controller
                 ]);
             }
 
-            $deduct = fn ($r) => $r->ingredient?->deductStock((float) $r->quantity * $line['quantity']);
-            $variantRecipes->each($deduct);
-            $modifierRecipes->each($deduct);
+            $ingredients = $recipes->pluck('ingredient', 'ingredient_id');
+            foreach ($deductions as $d) {
+                $ingredients[$d['i']]->deductStock($d['q']);
+            }
         }
     }
 
@@ -785,17 +928,28 @@ class OrderController extends Controller
     }
 
     /**
-     * Hoàn tác toàn bộ ảnh hưởng kho của 1 đơn ĐANG TỒN TẠI — cộng lại đúng số
-     * lượng nguyên liệu đã trừ trước đó (dùng khi sửa hoặc huỷ đơn ĐÃ HOÀN
-     * THÀNH). Giả định công thức không đổi giữa lúc bán và lúc sửa — trường
-     * hợp hiếm khi lệch (đã đổi công thức sau khi bán) chấp nhận sai số nhỏ,
-     * không chặn thao tác.
+     * Hoàn tác toàn bộ ảnh hưởng kho của 1 đơn ĐANG TỒN TẠI (dùng khi sửa hoặc huỷ đơn
+     * ĐÃ HOÀN THÀNH). Đơn bán từ bản này trở đi hoàn ĐÚNG lượng đã trừ lúc bán
+     * (stock_deductions) — kể cả khi công thức món đã đổi sau đó, hoặc nguyên liệu đã bị
+     * xoá mềm. Đơn cũ chưa có snapshot thì hoàn theo công thức hiện tại như trước.
      */
     private function reverseOrderInventory(Order $order): void
     {
         $order->load('items.modifiers');
 
         foreach ($order->items as $item) {
+            if (is_array($item->stock_deductions)) {
+                $ingredients = Ingredient::withTrashed()
+                    ->whereIn('id', collect($item->stock_deductions)->pluck('i'))
+                    ->get()->keyBy('id');
+
+                foreach ($item->stock_deductions as $d) {
+                    $ingredients->get($d['i'])?->restoreStock((float) $d['q']);
+                }
+
+                continue;
+            }
+
             $variantRecipes = Recipe::where('product_variant_id', $item->product_variant_id)->with('ingredient')->get();
             $modifierIds = $item->modifiers->pluck('modifier_id');
             $modifierRecipes = ModifierRecipe::whereIn('modifier_id', $modifierIds)->with('ingredient')->get();
@@ -816,6 +970,8 @@ class OrderController extends Controller
         $order = Order::where('location_id', $location->id)->with('shift')->findOrFail($orderId);
 
         abort_if($order->shift->closed_at !== null, 403, 'Ca chứa đơn này đã chốt, không thể sửa/huỷ nữa.');
+        // Đơn đã huỷ thì kho/điểm đã được hoàn — cho sửa/huỷ tiếp sẽ hoàn LẦN NỮA (cộng kho khống).
+        abort_if($order->isCancelled(), 422, 'Đơn này đã huỷ, không thể sửa/huỷ nữa.');
 
         $user = $request->user();
         abort_unless($user->isOwner() || $order->shift->user_id === $user->id, 403);
@@ -823,4 +979,18 @@ class OrderController extends Controller
         return $order;
     }
 
+    /**
+     * Đọc lại đơn KÈM KHOÁ dòng bên trong transaction và kiểm tra lại trạng thái — quyền
+     * đã được findEditableOrder() kiểm tra trước đó, ở đây chặn trường hợp đơn vừa bị
+     * thiết bị khác huỷ/chốt ca trong lúc request này đang chạy.
+     */
+    private function lockEditableOrder(Location $location, int $orderId): Order
+    {
+        $order = Order::where('location_id', $location->id)->lockForUpdate()->findOrFail($orderId);
+
+        abort_if($order->isCancelled(), 422, 'Đơn này vừa bị huỷ ở thiết bị khác.');
+        abort_if($order->shift()->value('closed_at') !== null, 403, 'Ca chứa đơn này đã chốt, không thể sửa/huỷ nữa.');
+
+        return $order;
+    }
 }

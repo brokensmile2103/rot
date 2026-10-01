@@ -130,8 +130,10 @@ class StaffController extends Controller
     {
         $location = $this->currentLocation($request);
 
-        $month = $request->query('month')
-            ? Carbon::parse($request->query('month').'-01')
+        // ?month=abc (gõ tay sai) trước đây làm trang lỗi 500 — chỉ nhận đúng dạng YYYY-MM.
+        $monthQuery = (string) $request->query('month', '');
+        $month = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthQuery)
+            ? Carbon::parse($monthQuery.'-01')
             : Carbon::today();
         $start = $month->copy()->startOfMonth();
         $end = $month->copy()->endOfMonth();

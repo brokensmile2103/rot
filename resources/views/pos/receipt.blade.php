@@ -67,6 +67,15 @@
 
         <div class="line"></div>
 
+        @if($order->daily_number)
+            {{-- Số thứ tự trong ngày — khách cầm hoá đơn chờ gọi số lấy món. --}}
+            <div class="center" style="margin: 4px 0;">
+                <div>SỐ THỨ TỰ</div>
+                <div class="bold" style="font-size: 28px; line-height: 1.1;">{{ $order->daily_number }}</div>
+            </div>
+            <div class="line"></div>
+        @endif
+
         <div class="row"><span>Đơn số:</span><span class="bold">#{{ $order->id }}</span></div>
         <div class="row"><span>Thời gian:</span><span>{{ $order->completed_at?->format('d/m/Y H:i') }}</span></div>
         <div class="row"><span>Loại đơn:</span><span>{{ $order->order_type === 'mang_di' ? 'Mang đi' : 'Ngồi lại' }}</span></div>
@@ -83,7 +92,7 @@
             @foreach($order->items as $item)
                 <tr>
                     <td class="item-name">
-                        {{ $item->variant->product->name }} ({{ $item->variant->name }})
+                        {{ $item->variant?->product?->name ?? '(món đã xoá)' }} ({{ $item->variant?->name }})
                         @if($item->modifiers->isNotEmpty())
                             <div class="modifiers">
                                 @foreach($item->modifiers as $mod)
@@ -103,9 +112,15 @@
 
         <div class="line"></div>
 
-        @if($order->discount_amount > 0)
+        @if($order->discount_amount > 0 || $order->points_redeemed_value > 0)
             <div class="row"><span>Tạm tính</span><span>{{ money($order->subtotal) }}đ</span></div>
-            <div class="row"><span>Giảm giá</span><span>-{{ money($order->discount_amount) }}đ</span></div>
+            @if($order->discount_amount > 0)
+                <div class="row"><span>Giảm giá</span><span>-{{ money($order->discount_amount) }}đ</span></div>
+            @endif
+            @if($order->points_redeemed_value > 0)
+                {{-- Trước đây thiếu dòng này: đơn chỉ đổi điểm thì tổng tiền thấp hơn tổng các món mà không có giải thích. --}}
+                <div class="row"><span>Dùng {{ $order->points_redeemed }} điểm</span><span>-{{ money($order->points_redeemed_value) }}đ</span></div>
+            @endif
         @endif
 
         <div class="row bold" style="font-size: 15px;">
@@ -114,12 +129,12 @@
         </div>
         <div class="row" style="margin-top: 4px;">
             <span>Thanh toán:</span>
-            <span>
-                @if($order->payment_method === 'tien_mat') Tiền mặt
-                @elseif($order->payment_method === 'chuyen_khoan') Chuyển khoản
-                @else Ví điện tử @endif
-            </span>
+            <span>{{ $order->payment_method === 'ket_hop' ? 'Kết hợp' : $order->paymentLabel() }}</span>
         </div>
+        @if($order->payment_method === 'ket_hop')
+            <div class="row"><span>&nbsp;· Tiền mặt</span><span>{{ money($order->cashAmount()) }}đ</span></div>
+            <div class="row"><span>&nbsp;· Chuyển khoản</span><span>{{ money($order->nonCashAmount()) }}đ</span></div>
+        @endif
 
         <div class="line"></div>
 

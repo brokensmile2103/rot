@@ -20,6 +20,7 @@ class OrderItemModifier extends Model
 
     public function modifier()
     {
-        return $this->belongsTo(Modifier::class);
+        // Tuỳ chọn đã xoá (mềm) vẫn hiện đúng tên trên hoá đơn/đơn cũ.
+        return $this->belongsTo(Modifier::class)->withTrashed();
     }
 }
