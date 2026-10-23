@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Thông số thuế cho hộ kinh doanh (v1.2.0) — dùng cho trang "Sổ doanh thu & ngưỡng thuế".
+ * Thông số thuế cho hộ kinh doanh — dùng cho trang "Sổ doanh thu & ngưỡng thuế".
  *
  * Tách ra file cấu hình (không viết cứng trong code) vì quy định thuế thay đổi
  * rất nhanh: ngưỡng doanh thu miễn thuế của hộ kinh doanh đã đổi từ 500 triệu lên

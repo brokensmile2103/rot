@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * Lớp bảo vệ form chống bot spam — 2 kỹ thuật kết hợp, không cần dịch vụ bên
  * ngoài (không cần Google reCAPTCHA). Dùng chung cho cả bản self-hosted lẫn
- * Rót Cloud.
+ * Rót.
  *
  * 1. Honeypot: 1 trường ẩn mà người dùng thật không bao giờ điền. Để trình
  *    duyệt/password manager (Chrome, 1Password, Bitwarden...) KHÔNG tự điền

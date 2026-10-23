@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Install;
 
 use App\Http\Controllers\Controller;
-use App\Models\Location;
 use App\Models\User;
+use App\Services\LocationProvisioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -120,55 +121,31 @@ class InstallController extends Controller
             'name' => 'required|string|max:100',
             'phone' => 'required|string|max:20|unique:users,phone',
             'password' => 'required|string|min:8|confirmed',
+            'shop_name' => 'nullable|string|max:100',
         ]);
 
-        $owner = User::forceCreate([
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'role' => 'owner',
-            'is_active' => true,
-        ]);
+        // CLOUD: tài khoản tạo ở bước cài đặt là SUPER ADMIN quản lý cả nền
+        // tảng, đồng thời là chủ của quán đầu tiên — dùng được ngay mọi tính
+        // năng bán hàng mà không cần tạo thêm tài khoản khác. Người dùng khác
+        // tự đăng ký qua /dang-ky (Super Admin có thể đóng đăng ký trong Cài đặt).
+        [$admin, $location] = DB::transaction(function () use ($data) {
+            $admin = User::forceCreate([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'password' => Hash::make($data['password']),
+                'role' => 'platform_admin',
+                'is_active' => true,
+            ]);
 
-        session(['install.owner_id' => $owner->id]);
+            $location = app(LocationProvisioner::class)->createFor($admin, trim($data['shop_name'] ?? '') ?: 'Quán của '.$data['name']);
 
-        return redirect()->route('install.location');
-    }
-
-    public function showLocationForm(): View
-    {
-        return view('install.location');
-    }
-
-    public function saveLocation(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:100',
-            'address' => 'nullable|string|max:255',
-        ]);
-
-        $ownerId = session('install.owner_id');
-        $owner = User::findOrFail($ownerId);
-
-        $location = Location::forceCreate([
-            'owner_id' => $owner->id,
-            'name' => $data['name'],
-            'address' => $data['address'] ?? null,
-            'is_active' => true,
-        ]);
-
-        $location->staff()->attach($owner->id);
-
-        // Danh mục & món mẫu để chủ quán thấy ngay giao diện order có gì, sửa/xoá sau đều được.
-        $category = $location->categories()->create(['name' => 'Cà phê', 'sort_order' => 0]);
-        $product = $category->products()->create(['name' => 'Cà phê đen', 'sort_order' => 0]);
-        $product->variants()->create(['name' => 'Ly', 'price' => 20000, 'is_default' => true]);
+            return [$admin, $location];
+        });
 
         file_put_contents(storage_path('installed.lock'), now()->toDateTimeString());
 
-        auth()->login($owner);
-        session()->forget('install.owner_id');
-        session(['current_location_id' => $location->id]);
+        auth()->login($admin);
+        $request->session()->put('current_location_id', $location->id);
 
         return redirect()->route('install.finish');
     }

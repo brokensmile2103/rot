@@ -6,7 +6,7 @@ use App\Services\StockAdjustmentPresenter;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 1 lần chủ quán SỬA TRỰC TIẾP tồn kho / giá vốn TB của nguyên liệu (v1.1.3).
+ * 1 lần chủ quán SỬA TRỰC TIẾP tồn kho / giá vốn TB của nguyên liệu.
  * Chỉ ghi thêm, không có chức năng sửa/xoá dòng nhật ký — xem migration để biết lý do tồn tại.
  */
 class StockAdjustment extends Model

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Mô hình kinh doanh (v1.3.0) — Rót hỗ trợ CÙNG MỘT bộ nghiệp vụ (bán hàng,
+ * Mô hình kinh doanh — Rót hỗ trợ CÙNG MỘT bộ nghiệp vụ (bán hàng,
  * kho, ca làm, báo cáo, sổ doanh thu...) cho nhiều loại hình khác nhau. File
  * này chỉ đổi CHỮ và ICON hiển thị cho đúng ngành hàng, KHÔNG đổi logic —
  * xem App\Services\BusinessTypeCatalog và Location::businessTerms().

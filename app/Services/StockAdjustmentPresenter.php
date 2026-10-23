@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Phần TÍNH TOÁN + ĐỊNH DẠNG SỐ của 1 dòng nhật ký điều chỉnh kho (v1.1.3).
+ * Phần TÍNH TOÁN + ĐỊNH DẠNG SỐ của 1 dòng nhật ký điều chỉnh kho.
  *
  * Tách khỏi model StockAdjustment thành class thuần (không phụ thuộc Eloquent)
  * để kiểm thử độc lập được các phép tính dễ sai: chênh lệch tồn kho, dấu +/−,

@@ -60,7 +60,7 @@ if (! function_exists('money_compact')) {
 
 if (! function_exists('business_terms')) {
     /**
-     * Bộ chữ/icon hiển thị theo mô hình kinh doanh (v1.3.0) — dùng ở những
+     * Bộ chữ/icon hiển thị theo mô hình kinh doanh — dùng ở những
      * view KHÔNG có sẵn biến $location của xe hiện tại (VD: trang danh sách
      * nhiều xe). Có $location thì lấy đúng terms của xe đó; không có thì lấy
      * theo xe đang chọn trong session, và cuối cùng mới rơi về mặc định

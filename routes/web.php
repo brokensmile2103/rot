@@ -1,6 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Install\InstallController;
 use App\Http\Controllers\Owner\CustomerController;
 use App\Http\Controllers\Owner\DataExportController;
@@ -9,11 +18,12 @@ use App\Http\Controllers\Owner\LocationController;
 use App\Http\Controllers\Owner\MenuController;
 use App\Http\Controllers\Owner\ModifierGroupController;
 use App\Http\Controllers\Owner\QuickSetupController;
+use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\Owner\ReportController;
 use App\Http\Controllers\Owner\SettingsController;
 use App\Http\Controllers\Owner\StaffController;
 use App\Http\Controllers\Owner\TaxBookController;
-use App\Http\Controllers\PublicMenuController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\Pos\CashBookController;
 use App\Http\Controllers\Pos\OrderController;
 use App\Http\Controllers\Pos\PrepQueueController;
@@ -21,7 +31,9 @@ use App\Http\Controllers\Pos\ShiftController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-// ===== INSTALL WIZARD (chặn tự động sau khi cài xong bởi middleware EnsureInstalled) =====
+// ===== INSTALL WIZARD (chỉ dùng 1 LẦN DUY NHẤT để khởi tạo nền tảng Cloud —
+// tạo tài khoản Super Admin, KHÔNG tạo quán nào. Chặn tự động sau khi cài
+// xong bởi middleware EnsureInstalled) =====
 Route::prefix('install')->name('install.')->group(function () {
     Route::get('/', [InstallController::class, 'welcome'])->name('welcome');
     Route::get('/requirements', [InstallController::class, 'requirements'])->name('requirements');
@@ -29,8 +41,6 @@ Route::prefix('install')->name('install.')->group(function () {
     Route::post('/database', [InstallController::class, 'saveDatabase'])->name('database.save');
     Route::get('/account', [InstallController::class, 'showAccountForm'])->name('account');
     Route::post('/account', [InstallController::class, 'saveAccount'])->name('account.save');
-    Route::get('/location', [InstallController::class, 'showLocationForm'])->name('location');
-    Route::post('/location', [InstallController::class, 'saveLocation'])->name('location.save');
     Route::get('/finish', [InstallController::class, 'finish'])->name('finish');
 });
 
@@ -38,10 +48,51 @@ Route::prefix('install')->name('install.')->group(function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+    Route::middleware('registration.open')->group(function () {
+        Route::get('/dang-ky', [RegisterController::class, 'show'])->name('register');
+        Route::post('/dang-ky', [RegisterController::class, 'store'])->name('register.store');
+    });
+
+    // ===== ĐĂNG NHẬP/ĐĂNG KÝ BẰNG GOOGLE — dùng chung 1 điểm vào cho cả 2 mục đích =====
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+    Route::middleware('registration.open')->group(function () {
+        Route::get('/dang-ky/hoan-tat', [RegisterController::class, 'showGooglePhone'])->name('register.google-phone');
+        Route::post('/dang-ky/hoan-tat', [RegisterController::class, 'storeGooglePhone'])->name('register.google-phone.store');
+    });
+
+    // ===== QUÊN MẬT KHẨU — chỉ hoạt động với tài khoản đã điền Email (Hồ sơ cá nhân) =====
+    Route::get('/quen-mat-khau', [ForgotPasswordController::class, 'show'])->name('password.request');
+    Route::post('/quen-mat-khau', [ForgotPasswordController::class, 'send'])->name('password.email');
+    Route::get('/dat-lai-mat-khau/{token}', [ResetPasswordController::class, 'show'])->name('password.reset');
+    Route::post('/dat-lai-mat-khau', [ResetPasswordController::class, 'update'])->name('password.update');
 });
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
-Route::redirect('/', '/order');
+// ===== TRANG TĨNH (CLOUD ONLY) — nội dung lấy từ database, Super Admin sửa được =====
+Route::get('/gioi-thieu', fn (PageController $c) => $c->show('gioi-thieu'))->name('pages.about');
+Route::get('/dieu-khoan-su-dung', fn (PageController $c) => $c->show('dieu-khoan-su-dung'))->name('pages.terms');
+Route::get('/chinh-sach-bao-mat', fn (PageController $c) => $c->show('chinh-sach-bao-mat'))->name('pages.privacy');
+
+// ===== SEO — sitemap liệt kê các trang công khai đáng index =====
+Route::get('/sitemap.xml', [PageController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [PageController::class, 'robots'])->name('robots');
+
+// ===== SUPER ADMIN (CLOUD ONLY) — quản lý toàn bộ quán trên nền tảng =====
+Route::middleware(['auth', 'role:platform_admin'])->prefix('sieu-quan-tri')->name('admin.')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/xe/{location}', [DashboardController::class, 'show'])->name('locations.show');
+    Route::put('/xe/{location}/khoa-mo', [DashboardController::class, 'toggleActive'])->name('locations.toggle');
+    Route::get('/cai-dat', [AdminSettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/cai-dat', [AdminSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/trang/{slug}', [AdminPageController::class, 'edit'])->name('pages.edit');
+    Route::put('/trang/{slug}', [AdminPageController::class, 'update'])->name('pages.update');
+    Route::get('/nguoi-dung', [AdminUserController::class, 'index'])->name('users.index');
+    Route::put('/nguoi-dung/{user}/mat-khau', [AdminUserController::class, 'resetPassword'])->name('users.password');
+    Route::put('/nguoi-dung/{user}/khoa-mo', [AdminUserController::class, 'toggleActive'])->name('users.toggle');
+});
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // ===== MENU CÔNG KHAI (QR đặt món) — KHÔNG cần đăng nhập, throttle theo IP
 // để chặn spam gửi yêu cầu hàng loạt =====
@@ -57,7 +108,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/order/luu-nhap', [OrderController::class, 'saveDraft'])->name('pos.draft.store');
 
     Route::get('/don-hang', [OrderController::class, 'orders'])->name('pos.orders.index');
-    // Polling nhẹ (v1.1.3) — trình duyệt hỏi định kỳ xem có yêu cầu gọi món mới từ
+    // Polling nhẹ — trình duyệt hỏi định kỳ xem có yêu cầu gọi món mới từ
     // khách (QR) không để hiện thông báo. Giới hạn 60 lần/phút/tài khoản: đủ dư
     // cho nhiều tab/thiết bị cùng mở (mỗi tab ~6 lần/phút) mà vẫn chặn được
     // script chạy sai/lặp vô hạn làm nặng máy chủ hosting rẻ.
@@ -93,6 +144,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ho-so', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/ho-so', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/ho-so/mat-khau', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::delete('/ho-so', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // ===== OWNER ONLY =====
@@ -141,7 +193,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('quan-ly')->name('owner.')->gr
     Route::get('/bao-cao', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/bao-cao/xuat-csv', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/bao-cao/gio-cao-diem', [ReportController::class, 'peakHours'])->name('reports.peak-hours');
-    // Sổ doanh thu (mẫu S1a-HKD) + theo dõi ngưỡng thuế hộ kinh doanh (v1.2.0)
+    // Sổ doanh thu (mẫu S1a-HKD) + theo dõi ngưỡng thuế hộ kinh doanh
     Route::get('/so-doanh-thu', [TaxBookController::class, 'index'])->name('tax.revenue-book');
     Route::get('/so-doanh-thu/in', [TaxBookController::class, 'print'])->name('tax.revenue-book.print');
     Route::get('/so-doanh-thu/xuat-csv', [TaxBookController::class, 'export'])->name('tax.revenue-book.export');

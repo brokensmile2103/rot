@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Quyết định form "Sửa nguyên liệu" THỰC SỰ đổi gì về Tồn kho / Giá vốn TB (v1.1.3).
+ * Quyết định form "Sửa nguyên liệu" THỰC SỰ đổi gì về Tồn kho / Giá vốn TB.
  *
  * Class thuần (không đụng database) để kiểm thử độc lập; InventoryController
  * gọi trong transaction sau khi đã khoá dòng nguyên liệu.

@@ -35,7 +35,7 @@ class Ingredient extends Model
         return $this->hasMany(StockIn::class);
     }
 
-    /** Nhật ký các lần sửa TRỰC TIẾP tồn kho/giá vốn TB (v1.1.3) — khác với stockIns() là các lần nhập kho. */
+    /** Nhật ký các lần sửa TRỰC TIẾP tồn kho/giá vốn TB — khác với stockIns() là các lần nhập kho. */
     public function stockAdjustments()
     {
         return $this->hasMany(StockAdjustment::class);

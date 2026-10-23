@@ -224,7 +224,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Endpoint cho cơ chế polling (v1.1.3) — trình duyệt của nhân viên/chủ quán gọi
+     * Endpoint cho cơ chế polling — trình duyệt của nhân viên/chủ quán gọi
      * định kỳ (xem resources/js/qr-requests.js) để lấy SỐ yêu cầu gọi món từ khách
      * (QR) đang chờ nhận, rồi tự cập nhật badge menu, thanh thông báo ở màn Order và
      * tiêu đề tab mà không cần tải lại trang.

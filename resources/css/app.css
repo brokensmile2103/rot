@@ -108,3 +108,36 @@ html[data-accent='violet'] {
     --accent-light: #ede9fe;
     --accent-ring: #8b5cf6;
 }
+
+/* CLOUD ONLY — style cho nội dung HTML động của 3 trang tĩnh (Giới
+   thiệu/Điều khoản/Chính sách), do Super Admin tự nhập không kèm class nào,
+   nên style trực tiếp theo thẻ HTML thô thay vì dùng plugin @tailwindcss/typography
+   (tránh thêm dependency mới không cần thiết). */
+.legal-content h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #171717;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.legal-content h3:first-child {
+    margin-top: 0;
+}
+.legal-content p {
+    color: #404040;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+}
+.legal-content ul, .legal-content ol {
+    margin-left: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #404040;
+}
+.legal-content ul { list-style: disc; }
+.legal-content ol { list-style: decimal; }
+.legal-content a {
+    color: #d97706;
+    text-decoration: underline;
+}
+.legal-content strong { font-weight: 700; color: #171717; }
+.legal-content em { color: #737373; font-style: italic; }

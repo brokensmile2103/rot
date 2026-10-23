@@ -9,14 +9,14 @@ class Location extends Model
 {
     /**
      * 'owner_id' và 'is_active' CỐ TÌNH không nằm trong $fillable — xem giải
-     * thích chi tiết ở bản Rót Cloud (app/Models/Location.php), lý do giống hệt.
+     * thích chi tiết ở bản Rót (app/Models/Location.php), lý do giống hệt.
      * 'public_token' cũng KHÔNG nằm trong $fillable cùng lý do — chỉ được
      * sinh ra ở backend (xem booted()/regeneratePublicToken()), không
      * bao giờ nhận trực tiếp từ input người dùng.
      */
     protected $fillable = [
         'name', 'address', 'tax_household_name', 'tax_code', 'business_type', 'business_type_label', 'font_scale', 'accent_color',
-        'receipt_paper_width', 'receipt_enabled', 'bank_bin', 'bank_account_no', 'bank_account_name',
+        'receipt_paper_width', 'receipt_enabled', 'bank_bin', 'bank_account_no', 'bank_account_name', 'bank_memo',
         'loyalty_enabled', 'points_earn_rate', 'points_redeem_value',
         'einvoice_enabled', 'einvoice_sandbox', 'einvoice_client_id', 'einvoice_client_secret',
         'einvoice_provider_account_id', 'einvoice_template_code', 'einvoice_invoice_series',
@@ -60,28 +60,19 @@ class Location extends Model
         return route('public.menu.show', $this->public_token);
     }
 
-    /**
-     * Toàn bộ đơn của xe — dùng bởi Xuất dữ liệu (DataExportService). Trước đây
-     * bản self-hosted thiếu quan hệ này nên "Xuất dữ liệu" báo lỗi 500.
-     */
-    public function orders()
-    {
-        return $this->hasMany(Order::class);
-    }
-
     public function customerOrderRequests()
     {
         return $this->hasMany(CustomerOrderRequest::class);
     }
 
-    /** Doanh thu ngoài Rót do chủ quán tự nhập (v1.2.0) — xem ExternalRevenue. */
+    /** Doanh thu ngoài Rót do chủ quán tự nhập — xem ExternalRevenue. */
     public function externalRevenues()
     {
         return $this->hasMany(ExternalRevenue::class);
     }
 
     /**
-     * Bộ chữ/icon hiển thị theo mô hình kinh doanh của xe này (v1.3.0) — xem
+     * Bộ chữ/icon hiển thị theo mô hình kinh doanh của xe này (Cải tiến) — xem
      * App\Services\BusinessTypeCatalog và config/business_types.php. Dùng ở
      * layout (nav), trang Thực đơn/Kho/Cài đặt, và trang menu công khai cho
      * khách quét QR.
@@ -124,6 +115,21 @@ class Location extends Model
         return $this->hasMany(Customer::class);
     }
 
+    /**
+     * Toàn bộ đơn của xe — Super Admin chỉ dùng để đếm/thống kê hoạt động (không đọc nội dung
+     * đơn); "Xuất dữ liệu" của chính chủ quán dùng để xuất đơn của xe mình.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** Đơn ĐÃ HOÀN THÀNH — dùng để tính "còn hoạt động hay không" mà không tính nhầm đơn nháp/đã huỷ. */
+    public function completedOrders()
+    {
+        return $this->hasMany(Order::class)->where('status', 'hoan_thanh');
+    }
+
     public function hasEinvoiceConfig(): bool
     {
         return $this->einvoice_enabled
@@ -132,6 +138,24 @@ class Location extends Model
             && $this->einvoice_provider_account_id
             && $this->einvoice_template_code
             && $this->einvoice_invoice_series;
+    }
+
+    public const DEFAULT_BANK_MEMO = 'Thanh toan don hang';
+
+    /** Nội dung chuyển khoản điền sẵn vào VietQR. Rỗng = không điền sẵn (ngân hàng tự xử lý). */
+    public function bankMemo(): string
+    {
+        $memo = array_key_exists('bank_memo', $this->attributes)
+            ? (string) $this->attributes['bank_memo']
+            : self::DEFAULT_BANK_MEMO;
+
+        return self::cleanMemo($memo);
+    }
+
+    /** Bỏ dấu và ký tự lạ (nhiều app ngân hàng từ chối nội dung có dấu/ký tự đặc biệt). */
+    public static function cleanMemo(string $memo): string
+    {
+        return trim(preg_replace('/\s+/', ' ', preg_replace('/[^A-Za-z0-9 \-]/', '', \Illuminate\Support\Str::ascii($memo))));
     }
 
     public function hasBankAccount(): bool
@@ -151,11 +175,17 @@ class Location extends Model
             return null;
         }
 
-        $params = http_build_query([
+        $query = [
             'amount' => (int) round($amount),
-            'addInfo' => $addInfo ?? 'Thanh toan don hang',
             'accountName' => $this->bank_account_name ?? '',
-        ]);
+        ];
+
+        $memo = $addInfo ?? $this->bankMemo();
+        if ($memo !== '') {
+            $query['addInfo'] = $memo;
+        }
+
+        $params = http_build_query($query);
 
         return "https://img.vietqr.io/image/{$this->bank_bin}-{$this->bank_account_no}-compact2.png?{$params}";
     }

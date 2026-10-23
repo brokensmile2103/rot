@@ -10,7 +10,12 @@ class EnsureRole
 {
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        if (! $request->user() || $request->user()->role !== $role) {
+        $user = $request->user();
+
+        // Super Admin có đủ quyền của chủ quán nên cũng được vào các trang 'owner'.
+        $allowed = $user && ($user->role === $role || ($role === 'owner' && $user->isPlatformAdmin()));
+
+        if (! $allowed) {
             abort(403, 'Bạn không có quyền truy cập trang này.');
         }
 

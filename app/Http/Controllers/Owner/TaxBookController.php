@@ -18,7 +18,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Sổ doanh thu & theo dõi ngưỡng thuế cho hộ kinh doanh (v1.2.0).
+ * Sổ doanh thu & theo dõi ngưỡng thuế cho hộ kinh doanh.
  *
  * Từ 2026 mọi hộ kinh doanh đều phải ghi sổ kế toán; hộ có doanh thu năm ở mức
  * miễn thuế chỉ cần 1 quyển duy nhất là Sổ doanh thu bán hàng hóa, dịch vụ (mẫu

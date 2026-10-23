@@ -24,14 +24,31 @@ trait ResolvesCurrentLocation
 {
     protected function currentLocation(Request $request, bool $onlyOwner = true): Location
     {
-        $location = Location::findOrFail($request->session()->get('current_location_id'));
-
         $user = $request->user();
-        $allowed = $onlyOwner
-            ? $location->owner_id === $user->id
-            : ($user->isOwner() ? $location->owner_id === $user->id : $location->staff()->where('users.id', $user->id)->exists());
+        $id = $request->session()->get('current_location_id');
+        $location = $id ? Location::find($id) : null;
 
-        abort_unless($allowed, 403);
+        abort_if($onlyOwner && ! $user->isOwner(), 403);
+
+        $allowed = $location && $location->is_active && ($onlyOwner
+            ? $location->owner_id === $user->id
+            : ($user->isOwner() ? $location->owner_id === $user->id : $location->staff()->where('users.id', $user->id)->exists()));
+
+        if (! $allowed) {
+            // Tự chữa thay vì lỗi 404/403 khó hiểu: phiên đăng nhập khôi phục từ "Ghi nhớ đăng nhập"
+            // (session mới, CHƯA có current_location_id), hoặc quán đang chọn vừa bị khoá/gỡ quyền
+            // → chọn lại quán đầu tiên còn hoạt động mà người dùng được phép vào.
+            // Super Admin của bản cài cũ chưa có quán riêng → tạo tự động.
+            app(\App\Services\LocationProvisioner::class)->ensureFor($user);
+
+            $location = $user->isOwner()
+                ? $user->ownedLocations()->where('is_active', true)->orderBy('id')->first()
+                : $user->locations()->where('locations.is_active', true)->orderBy('locations.id')->first();
+
+            abort_unless($location, 403, 'Quán đang tạm khoá hoặc bạn chưa thuộc quán nào đang hoạt động. Vui lòng liên hệ hỗ trợ.');
+
+            $request->session()->put('current_location_id', $location->id);
+        }
 
         return $location;
     }

@@ -1,15 +1,17 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "rot/rot",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Rót — phần mềm quản lý bán hàng cho xe/quầy cà phê nhỏ.",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
         "guzzlehttp/guzzle": "^7.8|^8.0",
         "laravel/framework": "^13.17",
-        "laravel/tinker": "^3.0"
+        "laravel/socialite": "^5.0",
+        "laravel/tinker": "^3.0",
+        "resend/resend-php": "^1.15"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

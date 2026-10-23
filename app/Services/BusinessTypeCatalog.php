@@ -3,8 +3,8 @@
 namespace App\Services;
 
 /**
- * Giải quyết bộ CHỮ + ICON hiển thị theo mô hình kinh doanh của 1 xe/quán
- * (v1.3.0). Đọc dữ liệu từ config/business_types.php — xem docblock ở đó để
+ * Giải quyết bộ CHỮ + ICON hiển thị theo mô hình kinh doanh của 1 xe/quán.
+ * Đọc dữ liệu từ config/business_types.php — xem docblock ở đó để
  * biết lý do và cách thêm mô hình mới.
  *
  * Class THUẦN (chỉ đọc mảng, không đụng Eloquent/database) để kiểm thử độc

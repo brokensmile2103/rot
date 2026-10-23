@@ -24,7 +24,7 @@
         </div>
     @endif
 
-    {{-- Mô hình kinh doanh (v1.3.0) — chỉ đổi chữ/icon hiển thị đúng ngành hàng,
+    {{-- Mô hình kinh doanh — chỉ đổi chữ/icon hiển thị đúng ngành hàng,
          không đụng tới dữ liệu thực đơn/kho đã có; đổi qua lại thoải mái. --}}
     <form method="POST" action="{{ route('owner.settings.business-type') }}"
           x-data="{ type: @js($terms['key']) }"
@@ -163,6 +163,10 @@
             </div>
             <x-input name="bank_account_no" label="Số tài khoản" icon="fa-credit-card" value="{{ old('bank_account_no', $location->bank_account_no) }}" inputmode="numeric" placeholder="Chỉ nhập số" autocomplete="off" />
             <x-input name="bank_account_name" label="Tên chủ tài khoản" icon="fa-user" value="{{ old('bank_account_name', $location->bank_account_name) }}" placeholder="VIET HOA KHONG DAU, đúng như trên thẻ" autocomplete="off" />
+            <div>
+                <x-input name="bank_memo" label="Nội dung chuyển khoản" icon="fa-pen" value="{{ old('bank_memo', $location->bankMemo()) }}" placeholder="Thanh toan don hang" maxlength="50" autocomplete="off" />
+                <p class="text-xs text-neutral-400 mt-1">Điền sẵn vào mã QR (tự bỏ dấu). Để trống nếu muốn khách tự nhập hoặc ngân hàng tự điền.</p>
+            </div>
         </div>
 
         <x-button icon="fa-floppy-disk">Lưu tài khoản ngân hàng</x-button>

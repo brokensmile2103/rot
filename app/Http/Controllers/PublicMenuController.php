@@ -35,7 +35,7 @@ class PublicMenuController extends Controller
             'location' => $location,
             'categories' => $categories,
             'loyaltyEnabled' => $location->loyalty_enabled,
-            // v1.3.0 — chữ hiển thị đúng mô hình kinh doanh (VD: "gọi món" vs "đặt dịch vụ").
+            // Cải tiến — chữ hiển thị đúng mô hình kinh doanh (VD: "gọi món" vs "đặt dịch vụ").
             'terms' => $location->businessTerms(),
         ]);
     }

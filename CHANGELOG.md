@@ -1,136 +1,241 @@
-# Lịch sử phiên bản — Rót
+# Release Notes
 
-Chỉ ghi những thay đổi ảnh hưởng tới người dùng (tính năng mới, sửa lỗi quan trọng). Không ghi các thay đổi kỹ thuật nội bộ không ảnh hưởng tới cách sử dụng.
+## [Unreleased](https://github.com/laravel/laravel/compare/v13.10.1...13.x)
 
-## v1.4.0 (hiện tại)
+## [v13.10.1](https://github.com/laravel/laravel/compare/v13.10.0...v13.10.1) - 2026-08-25
 
-### Tính năng mới
+**Full Changelog**: https://github.com/laravel/laravel/compare/v13.10.0...v13.10.1
 
-- **Số thứ tự đơn trong ngày + Hàng chờ pha chế**: mỗi đơn có số thứ tự trong ngày (1, 2, 3...) in to trên hoá đơn, hiện trong thông báo sau khi tính tiền và ở danh sách đơn — gọi số cho khách lấy món. Bật **Cài đặt → Hàng chờ pha chế & gọi số** để có thêm màn **"Pha chế"**: đơn vừa tính tiền xếp hàng theo thứ tự, đổi màu khi khách chờ lâu (≥5/≥10 phút), bấm **"Xong — gọi số"** khi làm xong, hoàn tác được nếu bấm nhầm. Tự cập nhật ~8 giây/lần, dùng được trên máy riêng của người pha chế.
-- **Thanh toán kết hợp (tiền mặt + chuyển khoản)**: khách đưa 1 phần tiền mặt, phần còn lại chuyển khoản — mã VietQR tự điền đúng phần còn lại. Chốt ca chỉ cộng phần tiền mặt vào quỹ, phần chuyển khoản tính vào mục chuyển khoản.
-- **Cảnh báo hết nguyên liệu ngay ở màn Order**: thẻ món hiện "Còn N" khi kho chỉ đủ pha ≤5 phần, "Hết nguyên liệu" khi không còn đủ (tính theo công thức và tồn kho hiện tại); giỏ hàng báo khi số lượng vượt quá lượng kho còn đủ. Chỉ cảnh báo, vẫn cho bán (số sổ sách có thể lệch thực tế).
-- **Gợi ý nhập hàng**: trang mới (Kho → "Gợi ý nhập hàng") — mỗi nguyên liệu dùng bao nhiêu/ngày (theo 14 ngày bán gần nhất), còn đủ dùng mấy ngày, nên nhập thêm bao nhiêu để đủ dùng 3/7/14/30 ngày và tổng tiền ước tính. Danh sách kho cũng hiện "đủ dùng ~X ngày" cho từng nguyên liệu.
-- **Kiểm kê kho hàng loạt**: trang mới (Kho → "Kiểm kê kho") — nhập số đếm thực tế của nhiều nguyên liệu trên 1 màn hình, thấy ngay chênh lệch và giá trị thiếu/dư, lưu 1 lần. Mỗi nguyên liệu lệch được ghi vào Nhật ký điều chỉnh (lý do "Kiểm kê thực tế"). Vẫn bán hàng bình thường trong lúc đếm — phần bán ra trong lúc đếm không bị tính nhầm là hao hụt.
-- **Chốt ca rõ ràng hơn**: tổng kết ca theo hình thức thanh toán (tiền mặt / chuyển khoản / ví) để đối chiếu với ngăn kéo và sao kê ngân hàng; **bộ đếm tiền theo mệnh giá** (500k → 1k) tự cộng tổng vào ô tiền đếm thực tế; cảnh báo trước nếu ca còn đơn nháp.
-- **Báo cáo**: thêm số đơn, giá trị trung bình/đơn, doanh thu theo hình thức thanh toán và theo người bán (trong "Phân tích nâng cao" và file CSV).
+## [v13.10.0](https://github.com/laravel/laravel/compare/v13.9.0...v13.10.0) - 2026-08-17
 
-### Sửa lỗi quan trọng
+* Add "monthly" to the available log drivers comment by [@csemazharul](https://github.com/csemazharul) in https://github.com/laravel/laravel/pull/6855
+* Ignore temporary LSP script files in `storage/framework` by [@imKenjo18](https://github.com/imKenjo18) in https://github.com/laravel/laravel/pull/6856
 
-- **Xuất dữ liệu bị lỗi 500** ở bản self-hosted (2 nguyên nhân: thiếu quan hệ đơn hàng của xe và sai kiểu trả về) — đã chạy lại bình thường.
-- **Chi phí lương tháng/mặt bằng bị tính gấp đôi khi xem báo cáo theo Ngày** (và thành 8 ngày khi xem theo Tuần) → "Lợi nhuận thực tế" theo ngày/tuần bị thấp hơn thật. Tuần vắt qua 2 tháng giờ cũng phân bổ đúng theo số ngày của từng tháng.
-- **Huỷ 1 đơn 2 lần (hoặc sửa đơn đã huỷ) làm kho/điểm bị hoàn 2 lần** (cộng khống tồn kho). Giờ đơn đã huỷ bị khoá; thêm khoá dữ liệu để 2 thiết bị cùng sửa/huỷ 1 đơn không gây sai lệch.
-- **Huỷ/sửa đơn hoàn kho đúng lượng đã trừ lúc bán**, kể cả khi công thức món đã bị đổi sau đó (trước đây hoàn theo công thức mới).
-- **Báo cáo, in lại hoá đơn bị lỗi 500 sau khi xoá 1 món đã từng bán** — giờ vẫn hiện đúng tên món cũ; món đã xoá không bán được nữa.
-- **Giá vốn TB bị đội lên khi nhập hàng lúc tồn kho đang âm** (bán vượt sổ sách) — giờ phần âm không bị đưa vào bình quân.
-- **Nhập kho cùng lúc có đơn bán ra có thể làm mất lượng vừa bán** (tồn kho cộng khống) — đã khoá dữ liệu khi nhập kho.
-- **Khách hàng thân thiết**: SĐT "0901 234 567" và "0901234567" giờ là 1 khách (trước đây tạo 2 hồ sơ); 2 đơn cùng khách thanh toán đồng thời không còn ghi đè điểm của nhau; tránh lỗi 500 khi SĐT trùng với khách đã xoá.
-- **Bấm "Mở ca" 2 lần tạo ra 2 ca cùng mở** (ca cũ treo mãi, tiền đầu ca bị tính 2 lần); bấm "Chốt ca" 2 lần không còn ghi đè kết quả.
-- **Đơn nháp còn lại lúc chốt ca bị kẹt vĩnh viễn** (không mở lại/hoàn tất được) — giờ màn Chốt ca cảnh báo trước và tự huỷ các đơn nháp đó khi chốt (nháp chưa thu tiền, chưa trừ kho).
-- **Hoá đơn in thiếu dòng "Dùng điểm"** khi khách đổi điểm mà không có giảm giá khác.
-- Đường dẫn có ngày/tháng gõ sai (VD `?date=abc` ở Báo cáo, `?month=abc` ở Bảng công) không còn gây lỗi 500.
+## [v13.9.0](https://github.com/laravel/laravel/compare/v13.8.0...v13.9.0) - 2026-08-12
 
-### Nâng cấp
+* GitHub Actions hardening by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6829
+* Bump actions/checkout from 6.0.2 to 6.0.3 in the github-actions group by [@dependabot](https://github.com/dependabot)[bot] in https://github.com/laravel/laravel/pull/6830
+* Pin pull requests and issues workflows to least-privilege reusable workflows by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6831
+* Pin pull requests and issues workflows to latest laravel/.github by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6832
+* Add Dependabot cooldown of 5 days by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6833
+* Enable Dependabot auto-merge by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6834
+* Restore expectsJson fallback when rendering JSON exceptions by [@jasonvarga](https://github.com/jasonvarga) in https://github.com/laravel/laravel/pull/6837
+* Bump shivammathur/setup-php from 2.37.1 to 2.37.2 in the github-actions group by [@dependabot](https://github.com/dependabot)[bot] in https://github.com/laravel/laravel/pull/6838
+* Add 'array' as a supported maintenance mode driver doc block by [@jackbayliss](https://github.com/jackbayliss) in https://github.com/laravel/laravel/pull/6840
+* Bump actions/checkout from 6.0.3 to 7.0.0 in the github-actions group by [@dependabot](https://github.com/dependabot)[bot] in https://github.com/laravel/laravel/pull/6841
+* Bump Concurrently to v10 by [@u01jmg3](https://github.com/u01jmg3) in https://github.com/laravel/laravel/pull/6845
+* Update APP_URL to use port 8000 by [@dipesh79](https://github.com/dipesh79) in https://github.com/laravel/laravel/pull/6846
+* Add monthly log driver to `config/logging.php` by [@SjorsO](https://github.com/SjorsO) in https://github.com/laravel/laravel/pull/6847
+* Bump actions/checkout from 7.0.0 to 7.0.1 in the github-actions group by [@dependabot](https://github.com/dependabot)[bot] in https://github.com/laravel/laravel/pull/6848
+* Use new `artisan dev` command in `composer dev` script by [@WendellAdriel](https://github.com/WendellAdriel) in https://github.com/laravel/laravel/pull/6849
+* Add `@laravel/multiplex` by [@joetannenbaum](https://github.com/joetannenbaum) in https://github.com/laravel/laravel/pull/6854
 
-Chạy `php artisan migrate` (1 migration mới: số thứ tự, hàng chờ pha chế, thanh toán kết hợp, lưu lượng nguyên liệu đã trừ của từng món bán ra) rồi `npm run build`. Dữ liệu cũ giữ nguyên; đơn bán trước khi nâng cấp không có số thứ tự và vẫn hoàn kho theo công thức hiện tại như trước.
+## [v13.8.0](https://github.com/laravel/laravel/compare/v13.7.0...v13.8.0) - 2026-05-25
 
-## v1.3.0
+* [13.x] remove Tailwind `@source` calls that are already covered by default by [@browner12](https://github.com/browner12) in https://github.com/laravel/laravel/pull/6823
+* [13.x] Render JSON exceptions for API routes by default by [@LucasCavalheri](https://github.com/LucasCavalheri) in https://github.com/laravel/laravel/pull/6824
 
-- **Chọn mô hình kinh doanh**: Cài đặt → mục "Mô hình kinh doanh" mới — chọn giữa **Quán cà phê / Xe nước**, **Quán ăn nhỏ**, **Tiệm tóc / gội đầu / làm đẹp** hoặc **Khác** (tự gõ 1 từ, VD: "suất ăn", "gói dịch vụ"). Chỉ đổi CHỮ và ICON hiển thị cho đúng ngành hàng — menu điều hướng, tên trang, nhãn nút, mã QR cho khách... — nghiệp vụ bán hàng, kho, ca làm, báo cáo, sổ doanh thu giữ nguyên y hệt, đổi qua lại thoải mái không mất dữ liệu. Khi thêm xe/quán mới cũng chọn được mô hình ngay từ đầu.
-- **Tiệm tóc / gội đầu, làm đẹp**: phù hợp với tiệm phục vụ khách vãng lai, xếp lượt tại chỗ — chưa hỗ trợ đặt lịch hẹn trước, mục chọn mô hình có ghi chú rõ điều này.
-- **"Thiết lập nhanh" có dữ liệu mẫu riêng cho từng mô hình**: Quán ăn nhỏ có sẵn 2 món cơm mẫu (Cơm sườn, Cơm gà xối mỡ) kèm nguyên liệu và nhóm "Độ cay"; Tiệm tóc có sẵn 2 dịch vụ mẫu (Cắt tóc nam, Gội đầu dưỡng sinh) kèm vật tư tiêu hao. Giá/định lượng các bộ mới này chỉ mang tính minh hoạ cách thiết lập, không nghiên cứu kỹ thị trường như bộ dữ liệu cà phê gốc — chủ quán cần tự điều chỉnh lại cho đúng thực tế.
-- **Nâng cấp**: chạy `php artisan migrate` (1 migration mới, mặc định mọi xe đang có là "Quán cà phê / Xe nước" — không đổi gì cho tới khi bạn tự vào Cài đặt chọn lại) rồi `npm run build`.
+## [v13.7.0](https://github.com/laravel/laravel/compare/v13.6.0...v13.7.0) - 2026-05-14
 
-## v1.2.0
+**Full Changelog**: https://github.com/laravel/laravel/compare/v13.6.0...v13.7.0
 
-- **Doanh thu ở trang Báo cáo giờ là số tiền THỰC NHẬN**: trước đây báo cáo cộng giá trị từng món (chỉ trừ giảm giá của món) nên khi bạn giảm giá cả đơn hoặc khách đổi điểm, doanh thu bị báo cao hơn số tiền thật sự thu về và lệch với số khi Chốt ca. Giờ doanh thu = tổng số tiền khách đã trả cho các đơn hoàn thành, khớp đúng Chốt ca; giá vốn không đổi nên lợi nhuận cũng phản ánh đúng. Thẻ doanh thu ghi rõ "đã trừ … giảm giá". Ở bảng theo món (và phân tích Menu Engineering), phần giảm giá cả đơn được chia theo tỷ lệ giá trị từng món để tổng các món luôn bằng tổng doanh thu. Áp dụng luôn cho dự đoán doanh thu, báo cáo tổng hợp nhiều xe, trang Giờ cao điểm và file CSV xuất báo cáo. **Lưu ý**: nếu bạn từng dùng giảm giá cả đơn/đổi điểm, doanh thu các kỳ cũ hiển thị trên báo cáo sẽ thấp hơn trước — không phải mất dữ liệu, mà là số cũ đang tính dư.
-- **Sổ doanh thu (mẫu S1a-HKD)**: trang mới (nút "Sổ doanh thu & ngưỡng thuế" ở trang Báo cáo). Từ 2026 mọi hộ kinh doanh đều phải ghi sổ kế toán; hộ có doanh thu ở mức miễn thuế chỉ cần 1 quyển là Sổ doanh thu bán hàng hóa, dịch vụ theo Thông tư 152/2025/TT-BTC. Rót tự lập sổ từ dữ liệu bán hàng: mỗi ngày có bán 1 dòng tổng doanh thu thực nhận, cộng theo từng tháng, xem theo tháng hoặc cả năm; **In / Lưu PDF** (bản in có tiêu đề hộ kinh doanh, mã số thuế, chỗ ký tên) và **tải CSV** mở được bằng Excel. Mỗi xe có 1 sổ riêng.
-- **Theo dõi ngưỡng miễn thuế 1 tỷ đồng/năm**: thanh tiến độ cho biết doanh thu năm nay đã chạm bao nhiêu % ngưỡng, còn bao nhiêu, và với nhịp bán 4 tuần gần đây thì dự kiến cả năm bao nhiêu, bao giờ vượt ngưỡng — để chuẩn bị trước khi phải nộp thuế và dùng hoá đơn điện tử khởi tạo từ máy tính tiền. Doanh thu được cộng dồn **tất cả xe của bạn** (ngưỡng tính theo chủ hộ, không tính riêng từng xe). Ngưỡng nằm trong `config/tax.php` (hoặc đặt `TAX_EXEMPT_THRESHOLD` trong `.env`) để đổi được khi quy định thay đổi mà không cần sửa mã nguồn.
-- **Doanh thu bán ngoài Rót**: doanh thu tính thuế là tổng mọi kênh bán. Nếu bạn còn bán qua app giao đồ ăn, bán sỉ hoặc nơi khác, nhập tổng theo ngày ở mục "Thêm doanh thu bán ngoài Rót" để sổ và mức theo dõi ngưỡng không bị thiếu. Các khoản này không lẫn vào báo cáo lợi nhuận. Cũng có trong file "Xuất dữ liệu" (`17-doanh-thu-ngoai-rot.csv`).
-- **Thông tin hộ kinh doanh**: nhập tên hộ/cá nhân kinh doanh và mã số thuế để in ở đầu sổ (địa điểm kinh doanh lấy từ địa chỉ của xe).
-- **Nâng cấp**: chạy `php artisan migrate` (2 migration mới) rồi `npm run build`. Rót chỉ ghi chép và tính tham khảo, không thay thế tư vấn thuế — đối chiếu với cơ quan thuế khi cần.
+## [v13.6.0](https://github.com/laravel/laravel/compare/v13.5.0...v13.6.0) - 2026-05-11
 
-## v1.1.3
+* Remove Pdo/Mysql const workaround by [@jnoordsij](https://github.com/jnoordsij) in https://github.com/laravel/laravel/pull/6810
 
-- **Thông báo khi khách gửi yêu cầu gọi món qua QR**: trước đây yêu cầu chỉ hiện khi nhân viên tự mở trang "Đơn hàng". Giờ ứng dụng tự kiểm tra định kỳ (~10 giây/lần, rất nhẹ) và cập nhật ngay, không cần tải lại trang: huy hiệu xanh ở menu "Đơn hàng" (ưu tiên hơn huy hiệu tổng số đơn — xử lý hết thì tự trở về số tổng đơn), thanh thông báo xanh ở đầu màn Order (không che giỏ hàng đang thao tác, không mất giỏ hàng nhập dở) và tiêu đề tab trình duyệt, vd: "(2) Đơn hàng · Rót". Không có cửa sổ nổi và không dùng âm thanh. Chỉ cần thêm chạy `php artisan migrate` (thêm 1 chỉ mục giúp việc kiểm tra này luôn nhanh).
-- **Nhận/Từ chối yêu cầu QR trên nhiều thiết bị**: nếu 2 người cùng bấm "Nhận đơn" 1 yêu cầu, người bấm sau được báo "đã được người khác nhận" thay vì gặp trang lỗi, và yêu cầu không thể bị nhận 2 lần.
-- **Giờ cao điểm**: trang mới (nút "Giờ cao điểm" ở trang Báo cáo) — bảng nhiệt theo giờ × thứ trong tuần cho thấy khung giờ, ngày nào đông khách nhất để xếp ca và chuẩn bị nguyên liệu. Xem theo 4/8/13 tuần gần nhất, theo số đơn hoặc doanh thu; mỗi ô là mức trung bình của 1 ngày thứ đó nên so sánh công bằng giữa các ô. Kèm giờ đông nhất, ngày đông nhất và top 3 khung giờ vàng. Không tính hôm nay (chưa bán xong); quán mới có dưới 14 ngày dữ liệu sẽ có cảnh báo "chỉ để tham khảo".
-- **Nhật ký điều chỉnh kho**: mỗi lần sửa trực tiếp "Tồn kho" hoặc "Giá vốn TB" của nguyên liệu giờ được ghi lại — số liệu trước/sau, chênh lệch, lý do (Kiểm kê thực tế / Hao hụt-hư hỏng-hết hạn / Sửa số liệu nhập sai / Khác), ghi chú, người sửa, thời điểm. Khi đổi số, ô chọn lý do tự hiện ra và là bắt buộc; chỉ đổi tên/đơn vị/ngưỡng cảnh báo thì không cần. Xem ở tab "Điều chỉnh" trong "Lịch sử" của từng nguyên liệu, hoặc trang "Nhật ký điều chỉnh" (nút ở đầu trang Kho) với bộ lọc theo nguyên liệu/lý do/thời gian và tổng giá trị thiếu hụt/dư ước tính theo giá vốn. Cũng có trong file "Xuất dữ liệu" (`16-dieu-chinh-kho.csv`). Cần chạy `php artisan migrate`.
-- **Sửa lỗi sửa nguyên liệu ghi đè tồn kho**: nếu mở form sửa nguyên liệu rồi trong lúc đó có đơn bán ra (làm tồn kho giảm), bấm Lưu chỉ để đổi tên trước đây sẽ ghi đè tồn kho cũ lên số đúng. Giờ chỉ số liệu nào bạn thật sự chỉnh mới bị đổi.
+## [v13.5.0](https://github.com/laravel/laravel/compare/v13.4.0...v13.5.0) - 2026-04-30
 
-## v1.1.2
+* Use the Vite font plugin for application fonts by [@WendellAdriel](https://github.com/WendellAdriel) in https://github.com/laravel/laravel/pull/6806
 
-- **Đặt món qua QR**: Cài đặt → "Đặt món qua QR" — bật lên để có ngay mã QR/link dán tại xe, khách tự quét xem thực đơn và gửi yêu cầu gọi món (không thanh toán trực tiếp). Yêu cầu hiện ở trang "Đơn hàng" để nhân viên Nhận/Từ chối; bấm Nhận sẽ mở thẳng màn Order với giỏ hàng điền sẵn để kiểm tra lại trước khi tính tiền. Nếu quán đang bật "Khách hàng thân thiết", khách điền thêm SĐT lúc gửi yêu cầu sẽ tự động tra cứu/áp dụng tích điểm ngay khi nhân viên nhận đơn.
-- **Badge số ở "Đơn hàng" và "Kho nguyên liệu"**: hiện số đơn trong ca và số nguyên liệu sắp hết ngay trên thanh điều hướng (cả PC lẫn mobile) — theo dõi nhanh mà không cần bấm vào từng trang.
-- **Kết quả chốt ca rõ ràng hơn**: sau khi chốt ca, hiện hẳn 1 màn riêng báo chênh lệch quỹ tiền mặt (khớp/dư/thiếu), thay vì chỉ 1 dòng thông báo nhỏ dễ bỏ lỡ như trước.
-- **Cài lên màn hình chính (PWA)**: mở nhanh như ứng dụng thật từ màn hình chính điện thoại, không cần mở trình duyệt rồi gõ lại địa chỉ mỗi lần bán hàng.
+## [v13.4.0](https://github.com/laravel/laravel/compare/v13.3.0...v13.4.0) - 2026-04-28
 
-## v1.1.1
+* Add @no_additional_args to composer test script config clear by [@jnoordsij](https://github.com/jnoordsij) in https://github.com/laravel/laravel/pull/6799
+* [13.x] Adds pao by default by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6802
 
-- **Bảng công**: trang mới (từ trang Nhân viên) tổng hợp theo tháng — số ca đã chốt, tổng giờ làm, lương ước tính cho từng nhân viên. Dùng đúng dữ liệu ca đã có sẵn, khớp với cách tính ở trang Báo cáo.
-- **Báo cáo tổng hợp nhiều xe**: trang mới (từ trang Các xe cà phê) cộng dồn doanh thu/giá vốn/lợi nhuận/chi phí vận hành của tất cả các xe cùng 1 chủ quán, kèm bảng chi tiết từng xe.
-- **Bàn giao ca nhanh hơn**: màn hình Mở ca giờ tự gợi ý sẵn "Tiền mặt đầu ca" theo đúng tiền cuối ca gần nhất đã đếm thực tế — vẫn phải xem/xác nhận lại, không tự động chấp nhận, không ảnh hưởng tới trách nhiệm từng người.
-- **Tối ưu trang Báo cáo**: gộp "Lợi nhuận thực tế" và "Dự đoán doanh thu" vào 1 khối có thể thu gọn, đỡ rối mắt trên điện thoại — 3 số chính (Doanh thu/Giá vốn/Lợi nhuận) và bảng chi tiết từng món vẫn luôn hiện đầy đủ như cũ.
+## [v13.3.0](https://github.com/laravel/laravel/compare/v13.2.0...v13.3.0) - 2026-04-16
 
-## v1.1.0
+* [13.x] enable npm audit by default by [@leo95batista](https://github.com/leo95batista) in https://github.com/laravel/laravel/pull/6788
+* Update changelog link to Laravel framework repo by [@Rattone](https://github.com/Rattone) in https://github.com/laravel/laravel/pull/6790
+* [13x] Add .codex to .gitignore by [@amdad121](https://github.com/amdad121) in https://github.com/laravel/laravel/pull/6793
 
-- **Lương nhân viên**: trang Nhân viên cho thiết lập lương theo giờ hoặc theo tháng cho từng người. Lương theo giờ tính đúng theo thời lượng từng ca đã chốt (giờ đóng ca trừ giờ mở ca) của chính nhân viên đó, không phải giờ hành chính cố định.
-- **Chi phí mặt bằng**: trang Cài đặt có thêm mục "Chi phí vận hành" để khai chi phí mặt bằng hàng tháng (mặc định 0, quán không có mặt bằng cố định thì bỏ qua).
-- **Lợi nhuận thực tế**: trang Báo cáo giờ tính thêm "Lợi nhuận thực tế" = Lợi nhuận − Chi phí nhân sự − Chi phí mặt bằng, phân bổ đúng theo tỉ lệ số ngày của kỳ Ngày/Tuần/Tháng đang xem. Chỉ hiện khi đã thiết lập ít nhất một trong hai khoản trên. Xuất CSV cũng có đủ các dòng chi phí này.
+## [v13.2.0](https://github.com/laravel/laravel/compare/v13.1.2...v13.2.0) - 2026-04-09
 
-## v1.0.9
+* Remove axios and enable ignore-scripts by [@WendellAdriel](https://github.com/WendellAdriel) in https://github.com/laravel/laravel/pull/6778
+* Add /.cursor/ to .gitignore by [@workwithbinu](https://github.com/workwithbinu) in https://github.com/laravel/laravel/pull/6782
+* Remove '.fleet' from .gitignore by [@dominiq007](https://github.com/dominiq007) in https://github.com/laravel/laravel/pull/6783
+* Support all compose file naming conventions in editorconfig by [@mmachatschek](https://github.com/mmachatschek) in https://github.com/laravel/laravel/pull/6786
 
-- **Lên đơn nhanh**: nút tia sét ở góc mỗi món trong màn Order — dành cho khách chỉ mua đúng 1 ly, trả tiền mặt vừa đủ. Món đơn giản (không phân size/tuỳ chọn) lên đơn thẳng ngay. Món có size hoặc tuỳ chọn (VD: Lượng đường) sẽ mở đúng 1 bước chọn (tự chọn sẵn mặc định, đổi được) rồi mới lên đơn — không còn đoán bừa mặc định cho món cần chọn thật.
-- **Thông báo đơn hàng thành công**: cả luồng thanh toán bình thường và Lên đơn nhanh đều hiện thông báo ngắn ở đầu màn hình khi tạo đơn xong.
-- **Sửa chi tiết nguyên liệu**: trang Kho nguyên liệu cho sửa trực tiếp cả "Tồn kho" và "Giá vốn TB", không chỉ tên/đơn vị — để sửa lại số liệu mẫu từ Thiết lập nhanh hoặc khớp lại theo kiểm kê thực tế, tách biệt với "Nhập kho" (chỉ dùng khi mua hàng thật).
-- **Thiết lập nhanh**: nút ở màn hình "Mở ca" (chỉ chủ quán, chỉ hiện khi quán chưa có thực đơn thật) — tạo sẵn 2 món (Cà phê đá, Cà phê sữa) cùng đầy đủ 8 nguyên liệu trong kho, đúng công thức trừ kho, kèm tuỳ chọn "Lượng đường/Lượng sữa". Giúp quán mới có ngay dữ liệu mẫu để bán thử hoặc tham khảo cách thiết lập.
-- **Xuất toàn bộ dữ liệu**: trang Cài đặt → "Xuất dữ liệu" — tải về 1 file ZIP gồm nhiều CSV (thực đơn, kho, khách hàng, ca làm, sổ quỹ, đơn hàng...) để tự sao lưu hoặc chuyển đi nơi khác.
-- **Dự đoán doanh thu**: trang Báo cáo có thêm khối dự đoán doanh thu cho ngày/tuần/tháng sắp tới, tính dựa trên xu hướng bán hàng thực tế + quy luật ngày trong tuần (không phải số ước lượng tuỳ tiện).
-- **Lịch sử nhập kho**: mỗi nguyên liệu có nút "Lịch sử" xem lại các lần nhập kho gần nhất (số lượng, tổng tiền, giá quy đổi, người nhập).
-- Mặc định TẮT "In hoá đơn" cho quán mới tạo (trước đây mặc định BẬT) — quán cũ không bị ảnh hưởng.
-- **Sửa lỗi**: đổi màu chủ đạo (Cài đặt → Giao diện) trước đây không áp dụng cho bóng đổ (shadow) ở nút chính, thẻ sổ quỹ và vài nơi khác — vẫn hiện màu cam mặc định dù đã đổi màu khác. Đã sửa để bóng đổ luôn khớp màu đã chọn.
-- **Sửa lỗi giao diện**: giỏ hàng và vài trang có nội dung dài trước đây phải cuộn cả trang thay vì cuộn gọn trong từng khu vực — đã sửa lại cách tính chiều cao để mỗi khu vực (menu, giỏ hàng, nội dung trang) tự cuộn đúng phần của mình. Ẩn thanh cuộn ở mọi khu vực cuộn nội bộ (modal, menu, danh sách), chỉ giữ 1 thanh cuộn ở khu vực nội dung chính.
-- **Sửa lỗi nghiêm trọng**: tài khoản nhân viên đăng nhập thành công nhưng vào bất kỳ trang nào trong khu vực bán hàng (Order, Mở ca/Chốt ca, Sổ quỹ) đều bị chặn "403 Forbidden" — do khu vực này bị áp nhầm quy tắc "chỉ chủ quán" thay vì "chủ quán và nhân viên". Nhân viên giờ dùng được bình thường.
-- **Sửa lỗ hổng bảo mật**: bước thanh toán trước đây không kiểm tra món/tuỳ chọn có thuộc đúng quán đang bán hay không — 1 request bị chỉnh sửa thủ công (qua devtools) có thể tham chiếu tới món của quán khác (bản Cloud) hoặc xe khác (bản self-hosted có nhiều xe), gây trừ nhầm kho/đọc được giá của bên không liên quan. Đã chặn lại: sai quán là báo lỗi ngay, không cho tạo đơn.
+## [v13.1.2](https://github.com/laravel/laravel/compare/v13.1.1...v13.1.2) - 2026-03-31
 
-## v1.0.8
+* Prevents installed package from executing malicious code via `postinstall` by [@crynobone](https://github.com/crynobone) in https://github.com/laravel/laravel/pull/6777
+* Add missing comma in axios by [@aziyan99](https://github.com/aziyan99) in https://github.com/laravel/laravel/pull/6779
 
-- Xuất báo cáo lợi nhuận ra file CSV (mở được bằng Excel, đúng chuẩn số/dấu phân cách cho Excel tiếng Việt).
+## [v13.1.1](https://github.com/laravel/laravel/compare/v13.1.0...v13.1.1) - 2026-03-31
 
-## v1.0.7
+* Update .gitignore by [@Cegem-360](https://github.com/Cegem-360) in https://github.com/laravel/laravel/pull/6774
+* [security] pin axios version by [@NickSdot](https://github.com/NickSdot) in https://github.com/laravel/laravel/pull/6776
 
-- Phân loại thực đơn theo mô hình Menu Engineering (Stars/Plowhorses/Puzzles/Dogs) trong trang Báo cáo.
-- Công thức nguyên liệu tách riêng theo TỪNG SIZE (trước đó dùng chung công thức của size đầu tiên cho cả món).
-- Cảnh báo khi 1 nguyên liệu vừa nằm trong công thức gốc, vừa nằm trong công thức của 1 tuỳ chọn đang gắn cho món đó — tránh trừ kho bị nhân đôi.
-- Duy trì đăng nhập 30 ngày (trước đó chỉ 2 giờ).
-- Chống bot đăng nhập (honeypot + token thời gian).
-- Thêm ô "Ghi nhớ đăng nhập" ở màn hình đăng nhập.
+## [v13.1.0](https://github.com/laravel/laravel/compare/v12.12.2...v13.1.0) - 2026-03-18
 
-## v1.0.6
+* Change back minimum-stability to stable by [@jnoordsij](https://github.com/jnoordsij) in https://github.com/laravel/laravel/pull/6766
+* Vite 8 support
 
-- Cải thiện hiệu năng và sửa một số lỗi nhỏ.
+## [v12.12.2](https://github.com/laravel/laravel/compare/v12.12.1...v12.12.2) - 2026-03-14
 
-## v1.0.5
+* [12.x] Add `APP_NAME` fallback in Slack log channel username by [@hamedelasma](https://github.com/hamedelasma) in https://github.com/laravel/laravel/pull/6762
 
-- Hoá đơn điện tử — tích hợp SePay eInvoice, cấu hình tại Cài đặt → Hoá đơn điện tử.
+## [v12.12.1](https://github.com/laravel/laravel/compare/v12.12.0...v12.12.1) - 2026-03-10
 
-## v1.0.4
+* [12.x] Makes imports consistent by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6760
 
-- Báo cáo lợi nhuận xem được theo Ngày/Tuần/Tháng, so sánh % với kỳ liền trước.
-- Định dạng tiền hiển thị đúng chuẩn Việt Nam (dấu chấm ngăn cách hàng nghìn) ở toàn bộ ứng dụng.
+## [v12.12.0](https://github.com/laravel/laravel/compare/v12.11.2...v12.12.0) - 2026-03-09
 
-## v1.0.3
+* Update phpunit version to ^11.5.50 to address CVE by [@PerryvanderMeer](https://github.com/PerryvanderMeer) in https://github.com/laravel/laravel/pull/6746
+* [12.x] Add `APP_NAME` fallback in mail config by [@apoorvdarshan](https://github.com/apoorvdarshan) in https://github.com/laravel/laravel/pull/6755
+* [12.x] Neutralize DB_URL in default phpunit.xml by [@Husseinadq](https://github.com/Husseinadq) in https://github.com/laravel/laravel/pull/6761
 
-- Cải thiện hiệu năng và sửa một số lỗi nhỏ.
+## [v12.11.2](https://github.com/laravel/laravel/compare/v12.11.1...v12.11.2) - 2026-01-19
 
-## v1.0.2
+* [12.x] Update composer dev script to ensure no timeout by [@jackbayliss](https://github.com/jackbayliss) in https://github.com/laravel/laravel/pull/6735
+* [12.x] Update jobs/cache migrations by [@jackbayliss](https://github.com/jackbayliss) in https://github.com/laravel/laravel/pull/6736
+* [12.x] Remove failed jobs indexes by [@jackbayliss](https://github.com/jackbayliss) in https://github.com/laravel/laravel/pull/6739
+* [12.x] Add `APP_URL` fallback in filesystems config by [@KentarouTakeda](https://github.com/KentarouTakeda) in https://github.com/laravel/laravel/pull/6742
+* chore: Update outdated GitHub Actions version by [@pgoslatara](https://github.com/pgoslatara) in https://github.com/laravel/laravel/pull/6743
 
-- Giảm giá/khuyến mãi cho đơn hàng (theo % hoặc theo số tiền, áp dụng cho cả đơn hoặc từng món).
-- Lưu đơn nháp — giữ chỗ cho khách đang chờ, bán tiếp cho khách khác mà không mất nội dung đơn cũ.
+## [v12.11.1](https://github.com/laravel/laravel/compare/v12.11.0...v12.11.1) - 2025-12-23
 
-## v1.0.1
+* Use environment variable for `DB_SSLMODE` - Postgres by [@robsontenorio](https://github.com/robsontenorio) in https://github.com/laravel/laravel/pull/6727
+* fix: ensure APP_URL does not have trailing slash in filesystem by [@msamgan](https://github.com/msamgan) in https://github.com/laravel/laravel/pull/6728
 
-- Cải thiện hiệu năng và sửa một số lỗi nhỏ.
+## [v12.11.0](https://github.com/laravel/laravel/compare/v12.10.1...v12.11.0) - 2025-11-25
 
-## v1.0.0
+* fix: cookies are not available for subdomains by default by [@joostdebruijn](https://github.com/joostdebruijn) in https://github.com/laravel/laravel/pull/6705
+* Fix PHP 8.5 PDO Driver Specific Constant Deprecation by [@RyanSchaefer](https://github.com/RyanSchaefer) in https://github.com/laravel/laravel/pull/6710
+* Ignore Laravel compiled views for Vite  by [@QistiAmal1212](https://github.com/QistiAmal1212) in https://github.com/laravel/laravel/pull/6714
 
-- Phiên bản đầu tiên: cài đặt qua trình cài đặt web (`/install`), đăng nhập, quản lý thực đơn (danh mục/món/size, xoá mềm khôi phục được), bán hàng 1 màn hình, ca làm việc, sổ quỹ, quản lý nhân viên, quản lý kho nguyên liệu, báo cáo giá vốn/lợi nhuận chính xác theo đúng thời điểm bán.
+## [v12.10.1](https://github.com/laravel/laravel/compare/v12.10.0...v12.10.1) - 2025-11-06
+
+* Update schema URL in package.json by [@robinmiau](https://github.com/robinmiau) in https://github.com/laravel/laravel/pull/6701
+
+## [v12.10.0](https://github.com/laravel/laravel/compare/v12.9.1...v12.10.0) - 2025-11-04
+
+* Add background driver by [@barryvdh](https://github.com/barryvdh) in https://github.com/laravel/laravel/pull/6699
+
+## [v12.9.1](https://github.com/laravel/laravel/compare/v12.9.0...v12.9.1) - 2025-10-23
+
+* [12.x] Replace Bootcamp with Laravel Learn by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6692
+* [12.x] Comment out CLI workers for fresh applications by [@timacdonald](https://github.com/timacdonald) in https://github.com/laravel/laravel/pull/6693
+
+## [v12.9.0](https://github.com/laravel/laravel/compare/v12.8.0...v12.9.0) - 2025-10-21
+
+**Full Changelog**: https://github.com/laravel/laravel/compare/v12.8.0...v12.9.0
+
+## [v12.8.0](https://github.com/laravel/laravel/compare/v12.7.1...v12.8.0) - 2025-10-20
+
+* [12.x] Makes test suite using broadcast's `null` driver by [@nunomaduro](https://github.com/nunomaduro) in https://github.com/laravel/laravel/pull/6691
+
+## [v12.7.1](https://github.com/laravel/laravel/compare/v12.7.0...v12.7.1) - 2025-10-15
+
+* Added `failover` driver to the `queue` config comment.  by [@sajjadhossainshohag](https://github.com/sajjadhossainshohag) in https://github.com/laravel/laravel/pull/6688
+
+## [v12.7.0](https://github.com/laravel/laravel/compare/v12.6.0...v12.7.0) - 2025-10-14
+
+**Full Changelog**: https://github.com/laravel/laravel/compare/v12.6.0...v12.7.0
+
+## [v12.6.0](https://github.com/laravel/laravel/compare/v12.5.0...v12.6.0) - 2025-10-02
+
+* Fix setup script by [@goldmont](https://github.com/goldmont) in https://github.com/laravel/laravel/pull/6682
+
+## [v12.5.0](https://github.com/laravel/laravel/compare/v12.4.0...v12.5.0) - 2025-09-30
+
+* [12.x] Fix type casting for environment variables in config files by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6670
+* Fix CVEs affecting vite by [@faissaloux](https://github.com/faissaloux) in https://github.com/laravel/laravel/pull/6672
+* Update .editorconfig to target compose.yaml by [@fredikaputra](https://github.com/fredikaputra) in https://github.com/laravel/laravel/pull/6679
+* Add pre-package-uninstall script to composer.json by [@cosmastech](https://github.com/cosmastech) in https://github.com/laravel/laravel/pull/6681
+
+## [v12.4.0](https://github.com/laravel/laravel/compare/v12.3.1...v12.4.0) - 2025-08-29
+
+* [12.x] Add default Redis retry configuration by [@mateusjatenee](https://github.com/mateusjatenee) in https://github.com/laravel/laravel/pull/6666
+
+## [v12.3.1](https://github.com/laravel/laravel/compare/v12.3.0...v12.3.1) - 2025-08-21
+
+* [12.x] Bump Pint version by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6653
+* [12.x] Making sure all related processed are closed when terminating the currently command by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6654
+* [12.x] Use application name from configuration by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6655
+* Bring back postAutoloadDump script by [@jasonvarga](https://github.com/jasonvarga) in https://github.com/laravel/laravel/pull/6662
+
+## [v12.3.0](https://github.com/laravel/laravel/compare/v12.2.0...v12.3.0) - 2025-08-03
+
+* Fix Critical Security Vulnerability in form-data Dependency by [@izzygld](https://github.com/izzygld) in https://github.com/laravel/laravel/pull/6645
+* Revert "fix" by [@RobertBoes](https://github.com/RobertBoes) in https://github.com/laravel/laravel/pull/6646
+* Change composer post-autoload-dump script to Artisan command by [@lmjhs](https://github.com/lmjhs) in https://github.com/laravel/laravel/pull/6647
+
+## [v12.2.0](https://github.com/laravel/laravel/compare/v12.1.0...v12.2.0) - 2025-07-11
+
+* Add Vite 7 support by [@timacdonald](https://github.com/timacdonald) in https://github.com/laravel/laravel/pull/6639
+
+## [v12.1.0](https://github.com/laravel/laravel/compare/v12.0.11...v12.1.0) - 2025-07-03
+
+* [12.x] Disable nightwatch in testing by [@laserhybiz](https://github.com/laserhybiz) in https://github.com/laravel/laravel/pull/6632
+* [12.x] Reorder environment variables in phpunit.xml for logical grouping by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6634
+* Change to hyphenate prefixes and cookie names by [@u01jmg3](https://github.com/u01jmg3) in https://github.com/laravel/laravel/pull/6636
+* [12.x] Fix type casting for environment variables in config files by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6637
+
+## [v12.0.11](https://github.com/laravel/laravel/compare/v12.0.10...v12.0.11) - 2025-06-10
+
+**Full Changelog**: https://github.com/laravel/laravel/compare/v12.0.10...v12.0.11
+
+## [v12.0.10](https://github.com/laravel/laravel/compare/v12.0.9...v12.0.10) - 2025-06-09
+
+* fix alphabetical order by [@Khuthaily](https://github.com/Khuthaily) in https://github.com/laravel/laravel/pull/6627
+* [12.x] Reduce redundancy and keeps the .gitignore file cleaner by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6629
+* [12.x] Fix: Add void return type to satisfy Rector analysis by [@Aluisio-Pires](https://github.com/Aluisio-Pires) in https://github.com/laravel/laravel/pull/6628
+
+## [v12.0.9](https://github.com/laravel/laravel/compare/v12.0.8...v12.0.9) - 2025-05-26
+
+* [12.x] Remove apc by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6611
+* [12.x] Add JSON Schema to package.json by [@martinbean](https://github.com/martinbean) in https://github.com/laravel/laravel/pull/6613
+* Minor language update by [@woganmay](https://github.com/woganmay) in https://github.com/laravel/laravel/pull/6615
+* Enhance .gitignore to exclude common OS and log files by [@mohammadRezaei1380](https://github.com/mohammadRezaei1380) in https://github.com/laravel/laravel/pull/6619
+
+## [v12.0.8](https://github.com/laravel/laravel/compare/v12.0.7...v12.0.8) - 2025-05-12
+
+* [12.x] Clean up URL formatting in README by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6601
+
+## [v12.0.7](https://github.com/laravel/laravel/compare/v12.0.6...v12.0.7) - 2025-04-15
+
+* Add `composer run test` command by [@crynobone](https://github.com/crynobone) in https://github.com/laravel/laravel/pull/6598
+* Partner Directory Changes in ReadME by [@joshcirre](https://github.com/joshcirre) in https://github.com/laravel/laravel/pull/6599
+
+## [v12.0.6](https://github.com/laravel/laravel/compare/v12.0.5...v12.0.6) - 2025-04-08
+
+**Full Changelog**: https://github.com/laravel/laravel/compare/v12.0.5...v12.0.6
+
+## [v12.0.5](https://github.com/laravel/laravel/compare/v12.0.4...v12.0.5) - 2025-04-02
+
+* [12.x] Update `config/mail.php` to match the latest core configuration by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6594
+
+## [v12.0.4](https://github.com/laravel/laravel/compare/v12.0.3...v12.0.4) - 2025-03-31
+
+* Bump vite from 6.0.11 to 6.2.3 - Vulnerability patch by [@abdel-aouby](https://github.com/abdel-aouby) in https://github.com/laravel/laravel/pull/6586
+* Bump vite from 6.2.3 to 6.2.4 by [@thinkverse](https://github.com/thinkverse) in https://github.com/laravel/laravel/pull/6590
+
+## [v12.0.3](https://github.com/laravel/laravel/compare/v12.0.2...v12.0.3) - 2025-03-17
+
+* Remove reverted change from CHANGELOG.md by [@AJenbo](https://github.com/AJenbo) in https://github.com/laravel/laravel/pull/6565
+* Improves clarity in app.css file by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6569
+* [12.x] Refactor: Structural improvement for clarity by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6574
+* Bump axios from 1.7.9 to 1.8.2 - Vulnerability patch by [@abdel-aouby](https://github.com/abdel-aouby) in https://github.com/laravel/laravel/pull/6572
+* [12.x] Remove Unnecessarily [@source](https://github.com/source) by [@AhmedAlaa4611](https://github.com/AhmedAlaa4611) in https://github.com/laravel/laravel/pull/6584
+
+## [v12.0.2](https://github.com/laravel/laravel/compare/v12.0.1...v12.0.2) - 2025-03-04
+
+* Make the github test action run out of the box independent of the choice of testing framework by [@ndeblauw](https://github.com/ndeblauw) in https://github.com/laravel/laravel/pull/6555
+
+## [v12.0.1](https://github.com/laravel/laravel/compare/v12.0.0...v12.0.1) - 2025-02-24
+
+* [12.x] prefer stable stability by [@pataar](https://github.com/pataar) in https://github.com/laravel/laravel/pull/6548
+
+## [v12.0.0 (2025-??-??)](https://github.com/laravel/laravel/compare/v11.0.2...v12.0.0)
+
+Laravel 12 includes a variety of changes to the application skeleton. Please consult the diff to see what's new.

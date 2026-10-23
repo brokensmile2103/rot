@@ -6,21 +6,18 @@
 
     @php
         $seoTitle = trim($__env->yieldContent('title')) ?: 'Rót · Phần mềm quản lý xe/quầy cà phê';
-        $seoDescription = trim($__env->yieldContent('meta_description')) ?: 'Rót — phần mềm quản lý bán hàng cho xe/quầy cà phê nhỏ lẻ.';
+        $seoDescription = trim($__env->yieldContent('meta_description')) ?: 'Rót — phần mềm quản lý bán hàng cho xe/quầy cà phê nhỏ lẻ. Đăng ký miễn phí, dùng ngay trên điện thoại, không cần cài đặt máy chủ.';
         $seoImage = trim($__env->yieldContent('og_image')) ?: asset('og-image.png');
-        // Self-hosted: mỗi bản cài là 1 công cụ RIÊNG TƯ của 1 quán, không
-        // phải trang web công khai — mặc định luôn noindex, không có case
-        // nào nên để Google index domain nội bộ của quán.
+        $seoRobots = trim($__env->yieldContent('robots')) ?: 'index, follow';
         $seoUrl = url()->current();
     @endphp
 
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="{{ $seoRobots }}">
     <link rel="canonical" href="{{ $seoUrl }}">
 
-    {{-- Open Graph — chỉ để link hiển thị đẹp khi chủ quán share cho nhân
-         viên qua Zalo/Messenger, không nhằm mục đích SEO công khai. --}}
+    {{-- Open Graph — để link hiển thị đẹp khi share qua Zalo/Facebook/Messenger --}}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Rót">
     <meta property="og:locale" content="vi_VN">
@@ -31,6 +28,7 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
+    {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
@@ -44,7 +42,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full bg-gradient-to-br from-amber-50 via-white to-orange-50 text-neutral-900 antialiased">
+<body class="min-h-screen bg-fixed bg-gradient-to-br from-amber-50 via-white to-orange-50 text-neutral-900 antialiased">
     <div class="min-h-full flex flex-col items-center justify-center px-4 py-10">
         <div class="w-full max-w-md">
             <div class="text-center mb-6">
@@ -59,8 +57,7 @@
 
             @php
                 $installSteps = [
-                    'install.welcome' => 0, 'install.requirements' => 1, 'install.database' => 2,
-                    'install.account' => 3, 'install.location' => 4,
+                    'install.welcome' => 0, 'install.requirements' => 1, 'install.database' => 2, 'install.account' => 3,
                 ];
                 $currentStep = null;
                 foreach ($installSteps as $routeName => $num) {
@@ -69,7 +66,7 @@
             @endphp
             @if(! is_null($currentStep) && $currentStep > 0)
                 <div class="flex items-center justify-center gap-2 mb-6">
-                    @for ($i = 1; $i <= 4; $i++)
+                    @for ($i = 1; $i <= 3; $i++)
                         <div class="h-1.5 rounded-full transition-all {{ $i <= $currentStep ? 'w-8 bg-amber-600' : 'w-4 bg-neutral-300' }}"></div>
                     @endfor
                 </div>

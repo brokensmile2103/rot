@@ -4,7 +4,7 @@ namespace App\Services;
 
 /**
  * Dựng các dòng Sổ doanh thu bán hàng hóa, dịch vụ (mẫu S1a-HKD) từ số liệu đã
- * gom sẵn (v1.2.0). Class THUẦN để kiểm thử độc lập; việc đọc database nằm ở
+ * gom sẵn. Class THUẦN để kiểm thử độc lập; việc đọc database nằm ở
  * TaxBookController.
  *
  * Theo hướng dẫn ghi sổ, doanh thu được ghi theo trình tự thời gian và có thể ghi

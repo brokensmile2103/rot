@@ -1,4 +1,6 @@
 @extends('layouts.guest')
+@section('title', 'Cài đặt Rót — Kiểm tra môi trường · Rót')
+@section('robots', 'noindex, nofollow')
 @section('subtitle', 'Bước 1/4 · Kiểm tra môi trường')
 @section('content')
     <ul class="space-y-1 mb-6">

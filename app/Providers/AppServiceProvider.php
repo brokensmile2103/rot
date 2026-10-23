@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 // id quán để polling biết hỏi cho quán nào — null (không polling) khi
                 // chưa có quán hợp lệ/không có quyền (VD: vừa đăng nhập, chưa chọn quán).
                 'qrLocationId' => null,
-                // Bộ chữ/icon theo mô hình kinh doanh (v1.3.0) — mặc định 'cafe' khi
+                // Bộ chữ/icon theo mô hình kinh doanh — mặc định 'cafe' khi
                 // chưa xác định được xe (vừa đăng nhập, chưa chọn xe). Layout dùng
                 // biến này để hiện đúng nhãn/icon menu cho từng ngành hàng.
                 'businessTerms' => app(\App\Services\BusinessTypeCatalog::class)->terms('cafe'),

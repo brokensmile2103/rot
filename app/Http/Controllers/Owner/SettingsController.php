@@ -31,7 +31,7 @@ class SettingsController extends Controller
             'location' => $location,
             'accentColors' => self::ACCENT_COLORS,
             'banks' => config('banks'),
-            // v1.3.0 — chọn mô hình kinh doanh để đổi chữ/icon hiển thị đúng
+            // Cải tiến — chọn mô hình kinh doanh để đổi chữ/icon hiển thị đúng
             // ngành hàng (quán cà phê, quán ăn, tiệm tóc...); xem
             // config/business_types.php.
             'businessTypeOptions' => $catalog->options(),
@@ -39,7 +39,7 @@ class SettingsController extends Controller
     }
 
     /**
-     * Đổi mô hình kinh doanh (v1.3.0) — CHỈ đổi chữ/icon hiển thị (nhãn menu,
+     * Đổi mô hình kinh doanh (Cải tiến) — CHỈ đổi chữ/icon hiển thị (nhãn menu,
      * tên trang, mã QR...), KHÔNG đụng tới dữ liệu thực đơn/kho đã có. Đổi
      * qua lại thoải mái, không mất gì cả.
      */
@@ -104,7 +104,11 @@ class SettingsController extends Controller
             'bank_bin' => 'nullable|string|in:'.implode(',', array_keys(config('banks'))),
             'bank_account_no' => 'nullable|string|max:30|regex:/^[0-9]+$/',
             'bank_account_name' => 'nullable|string|max:100',
+            'bank_memo' => 'nullable|string|max:50',
         ]);
+
+        // Rỗng = không điền sẵn nội dung (ngân hàng tự xử lý). Middleware đã đổi '' thành null.
+        $data['bank_memo'] = isset($data['bank_memo']) ? (\App\Models\Location::cleanMemo($data['bank_memo']) ?: null) : null;
 
         $location->update($data);
 
@@ -132,7 +136,7 @@ class SettingsController extends Controller
     }
 
     /**
-     * v1.1.0 — Chi phí mặt bằng hàng THÁNG, dùng để phân bổ vào "Lợi nhuận
+     * Cải tiến — Chi phí mặt bằng hàng THÁNG, dùng để phân bổ vào "Lợi nhuận
      * thực tế" ở trang Báo cáo (xem ReportController::operatingCosts()).
      * Mặc định 0 — quán không có mặt bằng cố định (xe đẩy thuần) để 0 là đủ,
      * không ảnh hưởng gì tới báo cáo.

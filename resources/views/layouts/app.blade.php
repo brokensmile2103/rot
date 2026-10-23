@@ -167,6 +167,12 @@
                 @endif
                 <span class="text-sm text-neutral-600 truncate font-medium">{{ auth()->user()?->name }}</span>
             </a>
+            @if(auth()->user()?->isPlatformAdmin())
+                <a href="{{ route('admin.dashboard') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition mb-1 text-neutral-600 hover:bg-neutral-100">
+                    <i class="fa-solid fa-user-shield w-5 text-center"></i>Super Admin
+                </a>
+            @endif
             @if(auth()->user()?->isOwner())
                 <a href="{{ route('owner.settings.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition mb-1
@@ -207,13 +213,18 @@
                     <div class="px-4 py-2 border-b border-neutral-100 mb-1">
                         <p class="text-sm font-semibold text-neutral-900 truncate">{{ auth()->user()?->name }}</p>
                         <span class="text-xs px-2 py-0.5 rounded-full {{ auth()->user()?->isOwner() ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-600' }} font-medium inline-block mt-1">
-                            {{ auth()->user()?->isOwner() ? 'Chủ quán' : 'Nhân viên' }}
+                            {{ auth()->user()?->isPlatformAdmin() ? 'Super Admin' : (auth()->user()?->isOwner() ? 'Chủ quán' : 'Nhân viên') }}
                         </span>
                     </div>
 
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 transition">
                         <i class="fa-solid fa-user w-4 text-center"></i>Hồ sơ cá nhân
                     </a>
+                    @if(auth()->user()?->isPlatformAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 transition">
+                            <i class="fa-solid fa-user-shield w-4 text-center"></i>Super Admin
+                        </a>
+                    @endif
                     <a href="{{ route('shift.history') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 transition">
                         <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i>Lịch sử ca
                     </a>

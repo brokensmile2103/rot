@@ -22,6 +22,18 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    /**
+     * CLOUD ONLY — Đăng nhập/Đăng ký bằng Google (qua package Socialite).
+     * Tạo trong Google Cloud Console (APIs & Services → Credentials → OAuth
+     * client ID, loại "Web application"), redirect URI phải khớp CHÍNH XÁC
+     * với GOOGLE_REDIRECT_URI (kể cả http/https và có/không dấu / cuối).
+     */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

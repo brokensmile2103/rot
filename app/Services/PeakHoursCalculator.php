@@ -5,7 +5,7 @@ namespace App\Services;
 use DateTimeInterface;
 
 /**
- * Tính bảng nhiệt (heatmap) GIỜ CAO ĐIỂM × THỨ TRONG TUẦN (v1.1.3).
+ * Tính bảng nhiệt (heatmap) GIỜ CAO ĐIỂM × THỨ TRONG TUẦN.
  *
  * Cố tình là class THUẦN (chỉ nhận mảng + DateTimeInterface, không đụng
  * database/Laravel/Carbon) để kiểm thử độc lập được toàn bộ phép tính — việc

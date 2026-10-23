@@ -6,7 +6,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 
 /**
- * Theo dõi doanh thu năm so với ngưỡng miễn thuế của hộ kinh doanh (v1.2.0).
+ * Theo dõi doanh thu năm so với ngưỡng miễn thuế của hộ kinh doanh.
  *
  * Class THUẦN (không đụng database/Laravel) để kiểm thử độc lập; việc gom số
  * liệu doanh thu nằm ở TaxBookController.

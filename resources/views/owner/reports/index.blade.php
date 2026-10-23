@@ -77,7 +77,7 @@
     </div>
     <p class="text-xs text-neutral-400 -mt-3 mb-5">So với kỳ liền trước ({{ $period === 'day' ? 'hôm qua' : ($period === 'week' ? 'tuần trước' : 'tháng trước') }})</p>
 
-    {{-- v1.1.1 — Gộp 2 khối "nâng cao" (lợi nhuận thực tế + dự đoán doanh thu) vào
+    {{-- Cải tiến — Gộp 2 khối "nâng cao" (lợi nhuận thực tế + dự đoán doanh thu) vào
          1 khối có thể thu gọn — trước đây xếp chồng liên tiếp ngay dưới 3 ô số
          chính, hơi rối mắt trên điện thoại. Mặc định ĐÓNG, chỉ mở khi cần xem. --}}
     <div x-data="{ advancedOpen: false }" class="mb-5">

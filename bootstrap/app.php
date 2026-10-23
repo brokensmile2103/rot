@@ -15,10 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\EnsureInstalled::class,
+            \App\Http\Middleware\EnsureActiveUser::class,
         ]);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'registration.open' => \App\Http\Middleware\EnsureRegistrationOpen::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

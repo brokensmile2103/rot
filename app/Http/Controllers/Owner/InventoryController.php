@@ -118,7 +118,7 @@ class InventoryController extends Controller
      * 1 giao dịch mua hàng thật), ghi thành 1 dòng "nhập kho" giả sẽ gây hiểu
      * lầm khi xem lại lịch sử sau này.
      *
-     * v1.1.3 — thay vào đó ghi vào NHẬT KÝ ĐIỀU CHỈNH KHO riêng (bảng
+     * Cải tiến — thay vào đó ghi vào NHẬT KÝ ĐIỀU CHỈNH KHO riêng (bảng
      * stock_adjustments): số liệu trước/sau, lý do, người sửa, thời điểm. Bắt
      * buộc chọn lý do khi thật sự đổi Tồn kho hoặc Giá vốn TB (đổi tên/đơn
      * vị/ngưỡng cảnh báo thì không cần và không ghi nhật ký).

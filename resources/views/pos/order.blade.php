@@ -5,7 +5,7 @@
 @section('title', 'Order · Rót')
 @section('page-title', 'Bán hàng')
 @section('content')
-<div x-data="posApp(@js($categories), @js($initialCart ?? []), @js($editingOrder?->id), @js($location->receipt_enabled), @js($location->hasBankAccount() ? ['bin' => $location->bank_bin, 'accountNo' => $location->bank_account_no, 'accountName' => $location->bank_account_name] : null), @js($editingOrder?->isDraft() ?? false), @js($location->loyalty_enabled), @js((float) $location->points_redeem_value), @js($editingOrder?->customer), @js(($acceptedRequest ?? null)?->customer_phone), @js((object) ($sellable ?? [])), @js(\App\Services\StockForecast::LOW_SELLABLE_THRESHOLD), @js($editingOrder && ! $editingOrder->isDraft() ? ['order_type' => $editingOrder->order_type, 'guest_count' => $editingOrder->guest_count, 'payment_method' => $editingOrder->payment_method, 'cash_portion' => $editingOrder->cash_portion ? (float) $editingOrder->cash_portion : null, 'discount_type' => $editingOrder->discount_type, 'discount_value' => $editingOrder->discount_value ? (float) $editingOrder->discount_value : null, 'redeem_points' => (int) $editingOrder->points_redeemed, 'points_earned' => (int) $editingOrder->points_earned] : null))" class="h-full flex flex-col">
+<div x-data="posApp(@js($categories), @js($initialCart ?? []), @js($editingOrder?->id), @js($location->receipt_enabled), @js($location->hasBankAccount() ? ['bin' => $location->bank_bin, 'accountNo' => $location->bank_account_no, 'accountName' => $location->bank_account_name, 'memo' => $location->bankMemo()] : null), @js($editingOrder?->isDraft() ?? false), @js($location->loyalty_enabled), @js((float) $location->points_redeem_value), @js($editingOrder?->customer), @js(($acceptedRequest ?? null)?->customer_phone), @js((object) ($sellable ?? [])), @js(\App\Services\StockForecast::LOW_SELLABLE_THRESHOLD), @js($editingOrder && ! $editingOrder->isDraft() ? ['order_type' => $editingOrder->order_type, 'guest_count' => $editingOrder->guest_count, 'payment_method' => $editingOrder->payment_method, 'cash_portion' => $editingOrder->cash_portion ? (float) $editingOrder->cash_portion : null, 'discount_type' => $editingOrder->discount_type, 'discount_value' => $editingOrder->discount_value ? (float) $editingOrder->discount_value : null, 'redeem_points' => (int) $editingOrder->points_redeemed, 'points_earned' => (int) $editingOrder->points_earned] : null))" class="h-full flex flex-col">
 
     @isset($editingOrder)
         <div class="shrink-0 bg-neutral-900 text-white text-sm text-center py-2 flex items-center justify-center gap-3">
@@ -802,9 +802,10 @@ function posApp(categoriesData, initialCartData = [], editingOrderId = null, rec
             if (!this.bankInfo) return null;
             const params = new URLSearchParams({
                 amount: Math.round(this.paymentMethod === 'ket_hop' ? this.transferPortion() : this.finalTotal()),
-                addInfo: 'Thanh toan don hang',
                 accountName: this.bankInfo.accountName || '',
             });
+            // Nội dung rỗng = không điền sẵn, để ngân hàng tự xử lý.
+            if (this.bankInfo.memo) params.set('addInfo', this.bankInfo.memo);
             return `https://img.vietqr.io/image/${this.bankInfo.bin}-${this.bankInfo.accountNo}-compact2.png?${params.toString()}`;
         },
 

@@ -16,7 +16,7 @@ class ShiftController extends Controller
     use ResolvesCurrentLocation;
 
     /**
-     * v1.1.1 — Gợi ý sẵn "Tiền mặt đầu ca" theo đúng tiền cuối ca ĐÃ ĐẾM
+     * Cải tiến — Gợi ý sẵn "Tiền mặt đầu ca" theo đúng tiền cuối ca ĐÃ ĐẾM
      * THỰC TẾ của ca gần nhất vừa chốt (bất kể ai đứng ca đó) — vì về mặt vật
      * lý, tiền trong ngăn kéo lúc bàn giao chính là con số đó. CHỈ LÀ GỢI Ý:
      * vẫn bắt buộc người mở ca tự xem/gõ lại số thật đang có trong tay, không

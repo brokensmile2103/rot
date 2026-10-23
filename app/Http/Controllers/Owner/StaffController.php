@@ -116,7 +116,7 @@ class StaffController extends Controller
     }
 
     /**
-     * v1.1.1 — Bảng công/chấm công theo THÁNG (khớp chu kỳ trả lương phổ biến
+     * Cải tiến — Bảng công/chấm công theo THÁNG (khớp chu kỳ trả lương phổ biến
      * ở VN, không cần chọn Ngày/Tuần rắc rối như trang Báo cáo).
      *
      * "Tổng giờ làm" tính từ CHÍNH XÁC các ca ĐÃ CHỐT có giờ mở ca trong

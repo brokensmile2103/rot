@@ -67,7 +67,7 @@ Alpine.store('nav', {
     pendingRequestCount: window.__navBadgeCounts?.pendingRequests ?? 0,
 });
 
-// Polling số yêu cầu gọi món QR đang chờ (v1.1.3). Cấu hình do layouts/app in ra;
+// Polling số yêu cầu gọi món QR đang chờ. Cấu hình do layouts/app in ra;
 // các trang KHÔNG dùng layout đó (đăng nhập, trình cài đặt /install, menu công khai của khách...)
 // không có window.__qrRequests nên start() tự bỏ qua, không hỏi server gì cả.
 Alpine.store('qr', createQrStore(Alpine, window.__qrRequests ?? {}));

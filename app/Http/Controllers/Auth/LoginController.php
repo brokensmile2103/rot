@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\LocationProvisioner;
 use App\Services\FormGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,10 +16,10 @@ class LoginController extends Controller
     public function show(): Response
     {
         // Trang này chứa token FormGuard phải LUÔN MỚI cho mỗi lượt tải — nếu
-        // triển khai sau 1 lớp cache nào đó (Nginx cache, CDN, cache plugin
-        // nếu dùng chung VPS với site khác...) lưu lại, mọi người sẽ nhận
-        // cùng 1 token cũ, khiến đăng nhập luôn báo lỗi "hết hạn" dù đúng mật
-        // khẩu. Header này ra lệnh rõ ràng cho MỌI lớp cache không được lưu.
+        // bị 1 lớp cache nào đó (Nginx cache, cache plugin WordPress dùng
+        // chung VPS...) lưu lại, mọi người sẽ nhận cùng 1 token cũ, khiến
+        // đăng nhập luôn báo lỗi "hết hạn" dù đúng mật khẩu. Header này ra
+        // lệnh rõ ràng cho MỌI lớp cache không được lưu response này.
         return response()
             ->view('auth.login')
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -27,9 +28,7 @@ class LoginController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
-        // Chặn bot TRƯỚC khi kiểm tra tài khoản — Honeypot (tên field ngẫu
-        // nhiên, readonly) + token thời gian ký HMAC, dùng chung với Rót
-        // Cloud (xem app/Services/FormGuard.php).
+        // Chặn bot TRƯỚC khi kiểm tra tài khoản — cùng cơ chế với RegisterController.
         $isBot = ! FormGuard::verify(
             $request,
             'login',
@@ -76,15 +75,23 @@ class LoginController extends Controller
             return back()->withErrors(['phone' => 'Tài khoản của bạn đã bị khoá.']);
         }
 
-        // Chỉ chọn trong số các location ĐANG HOẠT ĐỘNG — nhất quán với bản
-        // Cloud, dù self-hosted hiện chưa có giao diện khoá location.
+        // Super Admin cũng là chủ quán: bản cài cũ chưa có quán riêng thì tạo ngay lúc này.
+        app(LocationProvisioner::class)->ensureFor($user);
+
+        // Chỉ chọn trong số các location ĐANG HOẠT ĐỘNG — quán bị Super Admin
+        // tạm khoá thì không cho nhân viên/chủ quán vào bán hàng nữa, dù mật
+        // khẩu vẫn đúng.
         $firstLocation = $user->isOwner()
             ? $user->ownedLocations()->where('is_active', true)->first()
             : $user->locations()->where('locations.is_active', true)->first();
 
-        if ($firstLocation) {
-            $request->session()->put('current_location_id', $firstLocation->id);
+        if (! $firstLocation) {
+            Auth::logout();
+
+            return back()->withErrors(['phone' => 'Quán của bạn đang tạm khoá hoặc chưa được kích hoạt. Vui lòng liên hệ hỗ trợ.']);
         }
+
+        $request->session()->put('current_location_id', $firstLocation->id);
 
         return redirect()->intended(route('pos.order'));
     }

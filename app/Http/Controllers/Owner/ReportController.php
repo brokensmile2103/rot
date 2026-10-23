@@ -33,7 +33,7 @@ use Illuminate\View\View;
  * v1.0.8: xuất CSV — dùng dấu CHẤM PHẨY (;) làm phân cách cột thay vì dấu
  * phẩy mặc định, vì Excel ở cấu hình vùng Việt Nam mặc định hiểu dấu phẩy là
  * ký tự thập phân nên sẽ dồn hết cột nếu dùng dấu phẩy để phân tách.
- * v1.1.3: trang "Giờ cao điểm" (heatmap giờ × thứ trong tuần) — xem peakHours().
+ * Cải tiến: trang "Giờ cao điểm" (heatmap giờ × thứ trong tuần) — xem peakHours().
  */
 class ReportController extends Controller
 {
@@ -153,7 +153,7 @@ class ReportController extends Controller
     private const PEAK_HOURS_MIN_STABLE_DAYS = 14;
 
     /**
-     * Heatmap GIỜ CAO ĐIỂM × THỨ TRONG TUẦN (v1.1.3) — trả lời câu hỏi "khung
+     * Heatmap GIỜ CAO ĐIỂM × THỨ TRONG TUẦN — trả lời câu hỏi "khung
      * giờ nào, thứ mấy đông khách nhất" để xếp ca/chuẩn bị nguyên liệu. Xem
      * PeakHoursCalculator để biết cách tính từng ô.
      *
@@ -302,7 +302,7 @@ class ReportController extends Controller
     }
 
     /**
-     * v1.1.1 — Bản tóm tắt "sạch" (không kèm chi tiết từng món) cho ĐÚNG 1
+     * Cải tiến — Bản tóm tắt "sạch" (không kèm chi tiết từng món) cho ĐÚNG 1
      * xe, dùng bởi LocationController::report() để tổng hợp báo cáo NHIỀU
      * xe cùng lúc — tái dùng lại đúng công thức doanh thu/giá vốn/lợi nhuận/
      * chi phí vận hành đã có, không viết lại logic ở nơi khác (tránh 2 nơi
@@ -371,7 +371,7 @@ class ReportController extends Controller
     /**
      * Tổng hợp doanh thu/giá vốn/lợi nhuận + chi tiết theo món trong 1 khoảng thời gian.
      *
-     * v1.2.0 — DOANH THU = TIỀN THỰC NHẬN: tổng Order::total của đơn hoàn thành (đã trừ
+     * Cải tiến — DOANH THU = TIỀN THỰC NHẬN: tổng Order::total của đơn hoàn thành (đã trừ
      * giảm giá từng món, giảm giá CẢ ĐƠN và điểm khách đổi) — đúng số tiền khách trả và
      * khớp số Chốt ca. Trước đây cộng line_total nên doanh thu bị báo cao hơn thực tế mỗi
      * khi có giảm giá cả đơn/đổi điểm. Bảng theo món được phân bổ phần giảm trừ cấp đơn

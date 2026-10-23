@@ -1,4 +1,6 @@
 @extends('layouts.guest')
+@section('title', 'Cài đặt Rót — Kết nối cơ sở dữ liệu · Rót')
+@section('robots', 'noindex, nofollow')
 @section('subtitle', 'Bước 2/4 · Kết nối cơ sở dữ liệu')
 @section('content')
     <form method="POST" action="{{ route('install.database.save') }}" class="space-y-4">

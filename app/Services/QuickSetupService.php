@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * thiết lập 1 món/dịch vụ hoàn chỉnh (danh mục → món → công thức trừ kho →
  * tuỳ chọn) bằng cách nhìn vào 1 ví dụ THẬT, thay vì phải tự mò từ đầu.
  *
- * v1.3.0 — nội dung mẫu tuỳ theo Mô hình kinh doanh (Location::business_type,
+ * nội dung mẫu tuỳ theo Mô hình kinh doanh (Location::business_type,
  * xem config/business_types.php): CÀ PHÊ dùng bộ dữ liệu gốc bên dưới (đã
  * nghiên cứu giá thị trường); QUÁN ĂN và TIỆM TÓC có bộ ví dụ riêng ở cuối
  * class (seedFood/seedSalon) — chỉ mang tính MINH HOẠ, không nghiên cứu giá
@@ -79,7 +79,7 @@ class QuickSetupService
     }
 
     /**
-     * v1.3.0 — dữ liệu mẫu giờ tuỳ theo Mô hình kinh doanh của xe/quán (Cài
+     * dữ liệu mẫu giờ tuỳ theo Mô hình kinh doanh của xe/quán (Cài
      * đặt → Mô hình kinh doanh; xem config/business_types.php). Bộ dữ liệu
      * cho CÀ PHÊ (seedCafe) được nghiên cứu giá thị trường cẩn thận — xem
      * docblock đầu class; các bộ còn lại (QUÁN ĂN, TIỆM TÓC) chỉ là VÍ DỤ
@@ -133,7 +133,7 @@ class QuickSetupService
     }
 
     /**
-     * QUÁN ĂN NHỎ (v1.3.0) — 2 món cơm mẫu, MINH HOẠ cách gán công thức
+     * QUÁN ĂN NHỎ — 2 món cơm mẫu, MINH HOẠ cách gán công thức
      * nguyên liệu cho món ăn (khác cà phê ở chỗ định lượng theo GAM cho cả
      * nguyên liệu chính lẫn gia vị). Giá/định lượng chỉ mang tính tham khảo.
      */
@@ -174,7 +174,7 @@ class QuickSetupService
     }
 
     /**
-     * TIỆM TÓC / GỘI ĐẦU (v1.3.0) — 2 dịch vụ mẫu cho tiệm nhận khách vãng
+     * TIỆM TÓC / GỘI ĐẦU — 2 dịch vụ mẫu cho tiệm nhận khách vãng
      * lai (không đặt lịch hẹn). "Nguyên liệu" ở đây là vật tư tiêu hao mỗi
      * lượt khách (dầu gội, khăn...) — cùng cơ chế trừ kho như công thức pha
      * chế, chỉ đổi tên gọi cho đúng ngành.

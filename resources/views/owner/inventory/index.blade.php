@@ -127,7 +127,7 @@
                      liệu MẪU (giá tham khảo, không phải giá thật của quán), và "Nhập
                      kho" chỉ CỘNG THÊM chứ không sửa lại được số liệu nền đã sai.
 
-                     v1.1.3: mỗi lần thật sự đổi Tồn kho/Giá vốn TB được ghi vào Nhật ký
+                     Cải tiến: mỗi lần thật sự đổi Tồn kho/Giá vốn TB được ghi vào Nhật ký
                      điều chỉnh kho — nên khi số liệu bị đổi, ô chọn lý do tự hiện ra
                      (Alpine `changed`) và là bắt buộc. Các ô original_* mang giá trị lúc
                      mở form để server biết người dùng CÓ CHỦ Ý sửa số hay không (xem
@@ -204,7 +204,7 @@
                 </form>
 
                 {{-- Lịch sử của nguyên liệu, 2 tab: "Nhập kho" (các lần mua hàng) và "Điều chỉnh"
-                     (các lần sửa tay tồn kho/giá vốn — v1.1.3). Mỗi tab tải LƯỜI qua fetch() ngay
+                     (các lần sửa tay tồn kho/giá vốn). Mỗi tab tải LƯỜI qua fetch() ngay
                      khi mở lần đầu (xem loadHistory() ở x-data phía trên), không render sẵn cho
                      MỌI nguyên liệu. Mới nhất lên đầu. Ở tab Nhập kho có kèm giá vốn quy đổi mỗi
                      lần (tổng tiền ÷ số lượng) để thấy giá mua thay đổi, dù avg_cost_per_unit hiển
@@ -319,7 +319,7 @@
  * Giữ trạng thái đóng/mở các panel (sửa/nhập kho/lịch sử) của TỪNG dòng
  * nguyên liệu, và tải LƯỜI (lazy) lịch sử khi panel "Lịch sử" được mở —
  * xem InventoryController::stockInHistory() (tab Nhập kho) và
- * adjustmentHistory() (tab Điều chỉnh, v1.1.3). Cache theo (tab, id nguyên
+ * adjustmentHistory() (tab Điều chỉnh). Cache theo (tab, id nguyên
  * liệu) nên đóng/mở lại hay đổi qua lại giữa 2 tab KHÔNG gọi lại API.
  *
  * initialEditFor: id nguyên liệu cần mở sẵn form sửa (khi lưu bị từ chối và

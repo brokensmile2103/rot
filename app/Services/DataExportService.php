@@ -95,6 +95,7 @@ class DataExportService
                 ['Ngân hàng (BIN)', $location->bank_bin],
                 ['Số tài khoản', $location->bank_account_no],
                 ['Tên chủ tài khoản', $location->bank_account_name],
+                ['Nội dung chuyển khoản', $location->bankMemo()],
                 ['Bật tích điểm', $location->loyalty_enabled ? 'Có' : 'Không'],
                 ['Tỷ lệ tích điểm (đ/điểm)', $location->points_earn_rate],
                 ['Giá trị quy đổi 1 điểm (đ)', $location->points_redeem_value],
@@ -247,7 +248,7 @@ class DataExportService
         ];
     }
 
-    /** Nhật ký sửa trực tiếp tồn kho/giá vốn (v1.1.3) — đặt sau các file cũ để không đổi số thứ tự file đã có. */
+    /** Nhật ký sửa trực tiếp tồn kho/giá vốn — đặt sau các file cũ để không đổi số thứ tự file đã có. */
     private function stockAdjustments(Location $location): array
     {
         $rows = \App\Models\StockAdjustment::where('location_id', $location->id)
@@ -269,7 +270,7 @@ class DataExportService
         ];
     }
 
-    /** v1.2.0 — Doanh thu ngoài Rót do chủ quán tự nhập (dùng cho Sổ doanh thu và theo dõi ngưỡng thuế). */
+    /** Cải tiến — Doanh thu ngoài Rót do chủ quán tự nhập (dùng cho Sổ doanh thu và theo dõi ngưỡng thuế). */
     private function externalRevenues(Location $location): array
     {
         $rows = \App\Models\ExternalRevenue::where('location_id', $location->id)

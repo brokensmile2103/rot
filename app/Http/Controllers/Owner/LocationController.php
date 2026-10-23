@@ -21,14 +21,14 @@ class LocationController extends Controller
 
         return view('owner.locations.index', [
             'locations' => $locations,
-            // Danh sách mô hình để chọn khi thêm xe/quán mới (v1.3.0) — xem
+            // Danh sách mô hình để chọn khi thêm xe/quán mới (Cải tiến) — xem
             // config/business_types.php.
             'businessTypeOptions' => $catalog->options(),
         ]);
     }
 
     /**
-     * v1.1.1 — Báo cáo tổng hợp TẤT CẢ xe của cùng 1 chủ quán, cộng dồn
+     * Cải tiến — Báo cáo tổng hợp TẤT CẢ xe của cùng 1 chủ quán, cộng dồn
      * doanh thu/giá vốn/lợi nhuận/chi phí vận hành. Tái dùng đúng công thức
      * của ReportController (xem summaryFor()) cho từng xe rồi cộng lại —
      * không viết lại logic tính toán ở đây. Chỉ owner mới có nhiều xe nên
@@ -65,7 +65,7 @@ class LocationController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'address' => 'nullable|string|max:255',
-            // Mô hình kinh doanh (v1.3.0) — chỉ đổi chữ/icon hiển thị, không bắt
+            // Mô hình kinh doanh (Cải tiến) — chỉ đổi chữ/icon hiển thị, không bắt
             // buộc phải chọn đúng ngay từ đầu vì sửa lại được bất cứ lúc nào ở
             // Cài đặt. Giá trị lạ (không có trong config) thì coi như bỏ trống,
             // rơi về mặc định 'cafe' — validate ở đây chỉ để chặn input rác, không
