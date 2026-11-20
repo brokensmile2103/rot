@@ -38,7 +38,7 @@
                     </div>
                 </div>
                 <div class="col-span-2 text-right text-neutral-600">{{ $row['shift_count'] }}</div>
-                <div class="col-span-3 text-right text-neutral-900">{{ number_format($row['total_hours'], 1) }} giờ</div>
+                <div class="col-span-3 text-right text-neutral-900">{{ percent($row['total_hours'], 1) }} giờ</div>
                 <div class="col-span-3 text-right font-semibold {{ is_null($row['estimated_pay']) ? 'text-neutral-400' : 'text-emerald-700' }}">
                     {{ is_null($row['estimated_pay']) ? '—' : money($row['estimated_pay']).'đ' }}
                 </div>

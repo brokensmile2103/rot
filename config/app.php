@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Phiên bản phần mềm Rót (xem mục "Lịch sử phiên bản" trong README.md).
+    'version' => '2.1.0',
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

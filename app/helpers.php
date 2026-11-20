@@ -32,6 +32,32 @@ if (! function_exists('quantity')) {
     }
 }
 
+if (! function_exists('days_between')) {
+    /**
+     * Số NGÀY LỊCH (số nguyên) từ $from tới $to (mặc định hôm nay), có dấu.
+     *
+     * Carbon 3 (Laravel 11+) trả diffInDays() dạng SỐ THỰC theo giờ-phút-giây,
+     * nên in thẳng ra sẽ thành "18.351221040093 ngày không bán", còn so sánh
+     * "== 0" để hiện "hôm nay" thì gần như không bao giờ đúng. Hàm này đưa cả
+     * 2 mốc về đầu ngày rồi mới trừ: 23:00 hôm qua → 08:00 hôm nay là 1 ngày.
+     */
+    function days_between($from, $to = null): int
+    {
+        $start = \Illuminate\Support\Carbon::parse($from)->startOfDay();
+        $end = ($to === null ? \Illuminate\Support\Carbon::now() : \Illuminate\Support\Carbon::parse($to))->startOfDay();
+
+        return (int) round($start->diffInDays($end, false));
+    }
+}
+
+if (! function_exists('percent')) {
+    /** Phần trăm theo chuẩn Việt Nam: 12.5 → "12,5" (dấu phẩy thập phân). Không kèm ký hiệu %. */
+    function percent($value, int $decimals = 1): string
+    {
+        return number_format((float) $value, $decimals, ',', '.');
+    }
+}
+
 if (! function_exists('money_compact')) {
     /**
      * Số tiền RÚT GỌN cho những ô rất hẹp (VD: ô heatmap giờ cao điểm trên điện

@@ -45,3 +45,10 @@ Chép code mới lên (giữ nguyên `.env` và `storage/`), chạy `php artisan
 
 ## Kiểm thử
 `php artisan test` (SQLite, unit test). Bộ test luồng bán hàng `tests/Feature/PosFlowTest.php` và quét trang `tests/Feature/PageCrawlTest.php` cần MySQL/MariaDB với một database trống riêng cho test: `DB_CONNECTION=mysql DB_DATABASE=rot_test ... php artisan test`.
+
+## Lịch sử phiên bản
+
+### v2.1.0
+- Sửa lỗi hiển thị số ngày dạng số thực (VD "18.351221040093 ngày không bán") ở trang Super Admin: số ngày giờ đếm theo ngày lịch, là số nguyên. Cũng sửa "Đơn hoàn thành gần nhất: hôm nay" không bao giờ hiện, và mẫu số "số ngày hoạt động" bị lẻ khi tính trung bình đơn/ngày.
+- Thống nhất định dạng số kiểu Việt Nam (dấu phẩy thập phân, dấu chấm hàng nghìn) ở Báo cáo (% tăng/giảm, tỷ trọng hình thức thanh toán, xu hướng, Menu Engineering, số lượng bán), Bảng công (số giờ) và định lượng nguyên liệu của tuỳ chọn.
+- Thêm helper `days_between()` và `percent()` trong `app/helpers.php`.

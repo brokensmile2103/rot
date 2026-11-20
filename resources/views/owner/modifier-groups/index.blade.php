@@ -112,7 +112,7 @@
                             <p class="text-[11px] text-neutral-400">Nguyên liệu bị trừ kho khi khách chọn "{{ $mod->name }}" (không bắt buộc):</p>
                             @foreach($mod->modifierRecipes as $r)
                                 <div class="flex items-center justify-between text-xs">
-                                    <span class="text-neutral-600">{{ $r->ingredient?->name ?? '(đã xoá)' }} — {{ (float) $r->quantity }} {{ $r->ingredient?->unit }}</span>
+                                    <span class="text-neutral-600">{{ $r->ingredient?->name ?? '(đã xoá)' }} — {{ quantity($r->quantity, 4) }} {{ $r->ingredient?->unit }}</span>
                                     <form method="POST" action="{{ route('owner.modifier-groups.modifier.recipe.delete', $r->id) }}">
                                         @csrf @method('DELETE')
                                         <button class="text-red-500 hover:text-red-700"><i class="fa-solid fa-xmark"></i></button>

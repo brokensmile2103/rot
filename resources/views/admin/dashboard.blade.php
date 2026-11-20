@@ -35,7 +35,7 @@
                         </span>
                         @php
                             $daysSinceLastOrder = $loc->last_completed_order_at
-                                ? \Illuminate\Support\Carbon::parse($loc->last_completed_order_at)->diffInDays(now())
+                                ? max(0, days_between($loc->last_completed_order_at))
                                 : null;
                         @endphp
                         @if(is_null($daysSinceLastOrder))

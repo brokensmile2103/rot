@@ -138,13 +138,14 @@ class DashboardController extends Controller
 
         // +1 để ngày đơn đầu tiên cũng được tính là 1 ngày hoạt động (không
         // lấy diffInDays thô làm mẫu số, sẽ hụt mất đúng 1 ngày).
-        $daysActive = max(1, $firstOrderAt->diffInDays(Carbon::now()) + 1);
+        // days_between() đếm theo NGÀY LỊCH (số nguyên) — diffInDays() thô của Carbon 3 là số thực.
+        $daysActive = max(1, days_between($firstOrderAt) + 1);
         $avgPerDay = $totalCompleted / $daysActive;
 
         return [
             'first_order_at' => $firstOrderAt,
             'last_order_at' => $lastOrderAt,
-            'days_since_last_order' => $lastOrderAt->diffInDays(Carbon::now()),
+            'days_since_last_order' => max(0, days_between($lastOrderAt)),
             'days_active' => $daysActive,
             'avg_per_day' => $avgPerDay,
             'avg_per_week' => $avgPerDay * 7,

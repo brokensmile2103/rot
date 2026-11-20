@@ -52,7 +52,7 @@
             @if(!is_null($revenueChange))
                 <div class="text-xs font-semibold mt-1 {{ $revenueChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     <i class="fa-solid {{ $revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                    {{ number_format(abs($revenueChange), 1) }}%
+                    {{ percent(abs($revenueChange), 1) }}%
                 </div>
             @elseif($revenue > 0)
                 <div class="text-xs font-semibold mt-1 text-emerald-600">Mới</div>
@@ -68,7 +68,7 @@
             @if(!is_null($profitChange))
                 <div class="text-xs font-semibold mt-1 {{ $profitChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     <i class="fa-solid {{ $profitChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                    {{ number_format(abs($profitChange), 1) }}%
+                    {{ percent(abs($profitChange), 1) }}%
                 </div>
             @elseif($totalProfit > 0)
                 <div class="text-xs font-semibold mt-1 text-emerald-600">Mới</div>
@@ -114,7 +114,7 @@
                         <div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-neutral-600"><i class="fa-solid {{ $icon }} w-5 text-neutral-400"></i>{{ $label }}</span>
-                                <span class="font-semibold text-neutral-900">{{ money($amount) }}đ <span class="text-xs text-neutral-400 font-normal">({{ number_format($amount / $payTotal * 100, 0) }}%)</span></span>
+                                <span class="font-semibold text-neutral-900">{{ money($amount) }}đ <span class="text-xs text-neutral-400 font-normal">({{ percent($amount / $payTotal * 100, 0) }}%)</span></span>
                             </div>
                             <div class="h-1.5 bg-neutral-100 rounded-full mt-1 overflow-hidden"><div class="h-full {{ $bar }} rounded-full" style="width: {{ round($amount / $payTotal * 100, 1) }}%"></div></div>
                         </div>
@@ -177,7 +177,7 @@
                     </p>
                     <div class="flex items-center gap-1.5 mt-2 text-xs font-medium {{ $forecast['growthRatePerWeek'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                         <i class="fa-solid {{ $forecast['growthRatePerWeek'] >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
-                        Xu hướng {{ $forecast['growthRatePerWeek'] >= 0 ? 'tăng' : 'giảm' }} ~{{ number_format(abs($forecast['growthRatePerWeek']) * 100, 1) }}%/tuần
+                        Xu hướng {{ $forecast['growthRatePerWeek'] >= 0 ? 'tăng' : 'giảm' }} ~{{ percent(abs($forecast['growthRatePerWeek']) * 100, 1) }}%/tuần
                         <span class="text-neutral-400 font-normal">· dựa trên {{ $forecast['historyDays'] }} ngày dữ liệu</span>
                     </div>
                     <p class="text-xs text-neutral-400 mt-2 leading-relaxed">
@@ -199,7 +199,7 @@
         @forelse($rows as $row)
             <div class="px-4 py-3 border-b border-neutral-100 last:border-0 grid grid-cols-12 gap-2 items-center text-sm">
                 <div class="col-span-5 text-neutral-900 font-medium truncate">{{ $row['name'] }}</div>
-                <div class="col-span-2 text-right text-neutral-600">{{ $row['quantity'] }}</div>
+                <div class="col-span-2 text-right text-neutral-600">{{ quantity($row['quantity']) }}</div>
                 <div class="col-span-2 text-right text-neutral-900">{{ money($row['revenue']) }}đ</div>
                 <div class="col-span-3 text-right text-emerald-700 font-semibold">{{ money($row['profit']) }}đ</div>
             </div>
@@ -263,7 +263,7 @@
                                     <div class="px-4 py-2.5 flex items-center justify-between text-sm">
                                         <span class="text-neutral-700 font-medium truncate">{{ $item['name'] }}</span>
                                         <span class="text-neutral-400 text-xs shrink-0 ml-2">
-                                            {{ $item['quantity'] }} món · {{ number_format($item['popularity'], 1) }}% · CM {{ money($item['cm_per_unit']) }}đ
+                                            {{ quantity($item['quantity']) }} món · {{ percent($item['popularity'], 1) }}% · CM {{ money($item['cm_per_unit']) }}đ
                                         </span>
                                     </div>
                                 @endforeach
@@ -277,7 +277,7 @@
 
             <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
                 <i class="fa-solid fa-circle-info mr-1"></i>
-                Ngưỡng phân loại: CM (lãi ròng/món) so với mức trung bình chung là {{ money($avgCmPerUnit) }}đ; Popularity so với ngưỡng {{ number_format($popularityThreshold, 1) }}% (bằng 70% mức kỳ vọng nếu chia đều cho {{ $menuRows->count() }} món đang bán trong kỳ).
+                Ngưỡng phân loại: CM (lãi ròng/món) so với mức trung bình chung là {{ money($avgCmPerUnit) }}đ; Popularity so với ngưỡng {{ percent($popularityThreshold, 1) }}% (bằng 70% mức kỳ vọng nếu chia đều cho {{ $menuRows->count() }} món đang bán trong kỳ).
             </p>
         </div>
     @endif
